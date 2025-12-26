@@ -44,8 +44,14 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               OrderSummaryBottomBar(
-                totalOrders: _viewModel.totalOrderCount,
+                totalOrders: _viewModel.selectedTabIndex == 0
+                    ? _viewModel.totalOrderCount
+                    : _viewModel.totalTableCount,
                 totalAmount: _viewModel.totalEstimatedAmount,
+                orderLabel: _viewModel.selectedTabIndex == 0
+                    ? 'Total Running Orders'
+                    : 'Total Running Tables',
+                amountLabel: 'Estimated Total',
               ),
               _buildBottomNav(),
             ],
@@ -107,6 +113,7 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
   }
 
   Widget _buildHeader(ColorScheme colorScheme, TextTheme textTheme) {
+    final isOrdersTab = _viewModel.selectedTabIndex == 0;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
@@ -125,7 +132,7 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
           ),
           // Title
           Text(
-            'Running Orders',
+            isOrdersTab ? 'Running Orders' : 'Running Table',
             style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.primary,
@@ -174,8 +181,42 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
   }
 
   Widget _buildRunningTablesList() {
-    // Placeholder for Running Tables tab
-    return const Center(child: Text('Running Tables'));
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    // Show empty state when no tables
+    if (_viewModel.totalTableCount == 0) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Table with umbrella icon
+            Icon(
+              Icons.table_restaurant_outlined,
+              size: 100,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Running Table Found',
+              style: textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // TODO: Build actual tables list when data is available
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: 0,
+      itemBuilder: (context, index) {
+        return const SizedBox.shrink();
+      },
+    );
   }
 
   Widget _buildBottomNav() {
