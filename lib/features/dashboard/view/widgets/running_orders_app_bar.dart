@@ -87,7 +87,19 @@ class RunningOrdersAppBar extends ConsumerWidget
     ColorScheme colorScheme,
     ThemeModeNotifier themeNotifier,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return [
+      IconButton(
+        onPressed: () {
+          themeNotifier.toggleTheme();
+        },
+        icon: Icon(
+          isDark ? Icons.light_mode : Icons.dark_mode,
+          color: isDark
+              ? const Color(0xFFFFC107)
+              : colorScheme.onSurfaceVariant,
+        ),
+      ),
       IconButton(
         onPressed: onLightBulbTap,
         icon: const Icon(Icons.lightbulb_outline, color: Color(0xFFFFC107)),

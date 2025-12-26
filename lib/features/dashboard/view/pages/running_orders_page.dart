@@ -8,6 +8,7 @@ import '../widgets/order_category_card.dart';
 import '../widgets/order_summary_bottom_bar.dart';
 import '../widgets/running_orders_app_bar.dart';
 import '../widgets/running_orders_tab_bar.dart';
+import 'online_orders_page.dart';
 
 /// Main page for displaying running orders
 class RunningOrdersPage extends StatefulWidget {
@@ -76,13 +77,33 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
   }
 
   Widget _buildDrawer() {
+    final menuItems = DrawerMenuItemModel.getDefaultMenuItems();
     return DashboardDrawer(
-      menuItems: DrawerMenuItemModel.getDefaultMenuItems(),
+      menuItems: menuItems,
       onItemTap: (index) {
         Navigator.pop(context);
-        // Handle menu item tap
+        _handleDrawerNavigation(menuItems[index]);
       },
     );
+  }
+
+  void _handleDrawerNavigation(DrawerMenuItemModel item) {
+    switch (item.title) {
+      case 'Dashboard':
+        Navigator.pop(context); // Go back to dashboard
+        break;
+      case 'Running Orders':
+        // Already on this page, do nothing
+        break;
+      case 'Online Orders':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const OnlineOrdersPage()),
+        );
+        break;
+      default:
+        break;
+    }
   }
 
   Widget _buildBody() {

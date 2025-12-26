@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../model/online_order_model.dart';
 
 /// Horizontal scrollable tab bar for platform selection
-class PlatformTabBar extends StatelessWidget {
+class PlatformTabBar extends StatefulWidget {
   final List<OrderPlatformModel> platforms;
   final String selectedPlatformId;
   final ValueChanged<String> onPlatformChanged;
@@ -15,6 +15,33 @@ class PlatformTabBar extends StatelessWidget {
   });
 
   @override
+  State<PlatformTabBar> createState() => _PlatformTabBarState();
+}
+
+class _PlatformTabBarState extends State<PlatformTabBar> {
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToEnd() {
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -25,30 +52,40 @@ class PlatformTabBar extends StatelessWidget {
           bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.1)),
         ),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            ...platforms.map(
-              (platform) => _buildPlatformTab(
-                context,
-                platform: platform,
-                isSelected: platform.id == selectedPlatformId,
-                colorScheme: colorScheme,
+      child: Row(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 16),
+              child: Row(
+                children: widget.platforms
+                    .map(
+                      (platform) => _buildPlatformTab(
+                        context,
+                        platform: platform,
+                        isSelected: platform.id == widget.selectedPlatformId,
+                        colorScheme: colorScheme,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
-            // Arrow indicator for more platforms
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
+          ),
+          // Arrow button to scroll right
+          GestureDetector(
+            onTap: _scrollToEnd,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -60,7 +97,7 @@ class PlatformTabBar extends StatelessWidget {
     required ColorScheme colorScheme,
   }) {
     return GestureDetector(
-      onTap: () => onPlatformChanged(platform.id),
+      onTap: () => widget.onPlatformChanged(platform.id),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(

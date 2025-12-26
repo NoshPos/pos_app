@@ -10,6 +10,7 @@ import '../widgets/orders_chart_section.dart';
 import '../widgets/online_orders_filter_section.dart';
 import '../widgets/online_orders_data_table.dart';
 import 'notification_page.dart';
+import 'running_orders_page.dart';
 
 /// Online Orders Activity page
 class OnlineOrdersPage extends ConsumerStatefulWidget {
@@ -136,13 +137,33 @@ class _OnlineOrdersPageState extends ConsumerState<OnlineOrdersPage> {
   }
 
   Widget _buildDrawer() {
+    final menuItems = DrawerMenuItemModel.getDefaultMenuItems();
     return DashboardDrawer(
-      menuItems: DrawerMenuItemModel.getDefaultMenuItems(),
+      menuItems: menuItems,
       onItemTap: (index) {
         Navigator.pop(context);
-        // Handle menu item tap
+        _handleDrawerNavigation(menuItems[index]);
       },
     );
+  }
+
+  void _handleDrawerNavigation(DrawerMenuItemModel item) {
+    switch (item.title) {
+      case 'Dashboard':
+        Navigator.pop(context); // Go back to dashboard
+        break;
+      case 'Running Orders':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const RunningOrdersPage()),
+        );
+        break;
+      case 'Online Orders':
+        // Already on this page, do nothing
+        break;
+      default:
+        break;
+    }
   }
 
   Widget _buildBody() {
