@@ -6,7 +6,7 @@ class RunningOrdersViewModel extends ChangeNotifier {
   String _selectedOutlet = 'All Outlets';
   int _selectedTabIndex = 0;
   List<OrderCategoryModel> _orderCategories = [];
-  
+
   RunningOrdersViewModel() {
     _orderCategories = OrderCategoryModel.getDefaultCategories();
   }
@@ -17,12 +17,24 @@ class RunningOrdersViewModel extends ChangeNotifier {
 
   /// Get total order count across all categories
   int get totalOrderCount {
-    return _orderCategories.fold(0, (sum, category) => sum + category.orderCount);
+    return _orderCategories.fold(
+      0,
+      (sum, category) => sum + category.orderCount,
+    );
+  }
+
+  /// Get total table count (for Running Tables tab)
+  int get totalTableCount {
+    // TODO: Implement actual table count from API
+    return 0;
   }
 
   /// Get total estimated amount across all categories
   double get totalEstimatedAmount {
-    return _orderCategories.fold(0.0, (sum, category) => sum + category.estimatedAmount);
+    return _orderCategories.fold(
+      0.0,
+      (sum, category) => sum + category.estimatedAmount,
+    );
   }
 
   /// Update selected outlet

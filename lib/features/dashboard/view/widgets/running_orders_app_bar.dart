@@ -49,6 +49,7 @@ class RunningOrdersAppBar extends ConsumerWidget
     return GestureDetector(
       onTap: onOutletTap,
       child: Container(
+        constraints: const BoxConstraints(maxWidth: 220),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
@@ -57,12 +58,16 @@ class RunningOrdersAppBar extends ConsumerWidget
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              selectedOutlet,
-              style: TextStyle(
-                fontSize: 14,
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
+            Flexible(
+              child: Text(
+                selectedOutlet,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
             const SizedBox(width: 4),
@@ -82,7 +87,19 @@ class RunningOrdersAppBar extends ConsumerWidget
     ColorScheme colorScheme,
     ThemeModeNotifier themeNotifier,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return [
+      IconButton(
+        onPressed: () {
+          themeNotifier.toggleTheme();
+        },
+        icon: Icon(
+          isDark ? Icons.light_mode : Icons.dark_mode,
+          color: isDark
+              ? const Color(0xFFFFC107)
+              : colorScheme.onSurfaceVariant,
+        ),
+      ),
       IconButton(
         onPressed: onLightBulbTap,
         icon: const Icon(Icons.lightbulb_outline, color: Color(0xFFFFC107)),

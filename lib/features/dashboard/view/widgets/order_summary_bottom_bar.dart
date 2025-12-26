@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 class OrderSummaryBottomBar extends StatelessWidget {
   final int totalOrders;
   final double totalAmount;
+  final String orderLabel;
+  final String amountLabel;
 
   const OrderSummaryBottomBar({
     super.key,
     required this.totalOrders,
     required this.totalAmount,
+    this.orderLabel = 'Total Running Orders',
+    this.amountLabel = 'Estimated Total',
   });
 
   @override
@@ -18,12 +22,7 @@ class OrderSummaryBottomBar extends StatelessWidget {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: 8 + bottomPadding,
-      ),
+      padding: EdgeInsets.only(top: 28, bottom: bottomPadding),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer,
         boxShadow: [
@@ -34,31 +33,33 @@ class OrderSummaryBottomBar extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Order count section
-          _buildStatItem(
-            context,
-            label: 'Order',
-            value: '$totalOrders',
-            textTheme: textTheme,
-          ),
-          // Divider
-          Container(
-            height: 30,
-            width: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 32),
-            color: colorScheme.primary.withValues(alpha: 0.3),
-          ),
-          // Amount section
-          _buildStatItem(
-            context,
-            label: '₹',
-            value: totalAmount.toStringAsFixed(2),
-            textTheme: textTheme,
-          ),
-        ],
+      child: IntrinsicHeight(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Amount section
+            _buildStatItem(
+              context,
+              label: amountLabel,
+              value: '₹${totalAmount.toStringAsFixed(0)}',
+              textTheme: textTheme,
+            ),
+            // Divider
+            Container(
+              width: 1,
+              margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 4),
+              color: colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
+            ),
+            // Order count section
+            _buildStatItem(
+              context,
+              label: orderLabel,
+              value: '$totalOrders',
+              textTheme: textTheme,
+            ),
+          ],
+        ),
       ),
     );
   }

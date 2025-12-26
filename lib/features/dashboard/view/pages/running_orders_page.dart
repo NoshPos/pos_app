@@ -8,6 +8,7 @@ import '../widgets/order_category_card.dart';
 import '../widgets/order_summary_bottom_bar.dart';
 import '../widgets/running_orders_app_bar.dart';
 import '../widgets/running_orders_tab_bar.dart';
+import 'online_orders_page.dart';
 
 /// Main page for displaying running orders
 class RunningOrdersPage extends StatefulWidget {
@@ -44,8 +45,14 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               OrderSummaryBottomBar(
-                totalOrders: _viewModel.totalOrderCount,
+                totalOrders: _viewModel.selectedTabIndex == 0
+                    ? _viewModel.totalOrderCount
+                    : _viewModel.totalTableCount,
                 totalAmount: _viewModel.totalEstimatedAmount,
+                orderLabel: _viewModel.selectedTabIndex == 0
+                    ? 'Total Running Orders'
+                    : 'Total Running Tables',
+                amountLabel: 'Estimated Total',
               ),
               _buildBottomNav(),
             ],
@@ -70,13 +77,33 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
   }
 
   Widget _buildDrawer() {
+    final menuItems = DrawerMenuItemModel.getDefaultMenuItems();
     return DashboardDrawer(
-      menuItems: DrawerMenuItemModel.getDefaultMenuItems(),
+      menuItems: menuItems,
       onItemTap: (index) {
         Navigator.pop(context);
-        // Handle menu item tap
+        _handleDrawerNavigation(menuItems[index]);
       },
     );
+  }
+
+  void _handleDrawerNavigation(DrawerMenuItemModel item) {
+    switch (item.title) {
+      case 'Dashboard':
+        Navigator.pop(context); // Go back to dashboard
+        break;
+      case 'Running Orders':
+        // Already on this page, do nothing
+        break;
+      case 'Online Orders':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const OnlineOrdersPage()),
+        );
+        break;
+      default:
+        break;
+    }
   }
 
   Widget _buildBody() {
@@ -107,6 +134,7 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
   }
 
   Widget _buildHeader(ColorScheme colorScheme, TextTheme textTheme) {
+    final isOrdersTab = _viewModel.selectedTabIndex == 0;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
@@ -125,7 +153,7 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
           ),
           // Title
           Text(
-            'Running Orders',
+            isOrdersTab ? 'Running Orders' : 'Running Table',
             style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.primary,
@@ -174,8 +202,42 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
   }
 
   Widget _buildRunningTablesList() {
-    // Placeholder for Running Tables tab
-    return const Center(child: Text('Running Tables'));
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    // Show empty state when no tables
+    if (_viewModel.totalTableCount == 0) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Table with umbrella icon
+            Icon(
+              Icons.table_restaurant_outlined,
+              size: 100,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Running Table Found',
+              style: textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // TODO: Build actual tables list when data is available
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: 0,
+      itemBuilder: (context, index) {
+        return const SizedBox.shrink();
+      },
+    );
   }
 
   Widget _buildBottomNav() {
