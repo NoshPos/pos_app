@@ -83,21 +83,15 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
   }
 
   Widget _buildHeader(ColorScheme colorScheme, TextTheme textTheme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.1)),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: [
+          // Back button
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
               padding: const EdgeInsets.all(8),
-
               child: Icon(
                 Icons.arrow_back,
                 color: colorScheme.onSurfaceVariant,
@@ -105,15 +99,15 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
               ),
             ),
           ),
-          Expanded(
-            child: Text(
-              'Store status tracking dashboard',
-              style: textTheme.titleMedium?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
+          // Title
+          Text(
+            'Store status tracking dashboard',
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.primary,
             ),
           ),
+          const Spacer(),
         ],
       ),
     );

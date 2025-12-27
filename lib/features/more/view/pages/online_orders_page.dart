@@ -115,16 +115,11 @@ class _OnlineOrdersPageState extends State<OnlineOrdersPage> {
   }
 
   Widget _buildHeader(ColorScheme colorScheme, TextTheme textTheme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.1)),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: [
+          // Back button
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
