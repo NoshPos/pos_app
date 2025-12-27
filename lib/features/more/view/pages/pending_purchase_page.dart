@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/widgets/bottom_nav_bar.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/pos_app_bar.dart';
 import '../../../../core/widgets/show_outlet_picker.dart';
@@ -20,7 +19,6 @@ class PendingPurchasePage extends ConsumerStatefulWidget {
 
 class _PendingPurchasePageState extends ConsumerState<PendingPurchasePage> {
   late final PendingPurchaseViewModel _viewModel;
-  int _bottomNavIndex = 0;
 
   @override
   void initState() {
@@ -54,14 +52,6 @@ class _PendingPurchasePageState extends ConsumerState<PendingPurchasePage> {
             },
           ),
           body: _buildBody(),
-          bottomNavigationBar: BottomNavBar(
-            currentIndex: _bottomNavIndex,
-            onTap: (index) {
-              setState(() {
-                _bottomNavIndex = index;
-              });
-            },
-          ),
           floatingActionButton: ChatSupportButton(
             onTap: () {
               // Handle chat support tap

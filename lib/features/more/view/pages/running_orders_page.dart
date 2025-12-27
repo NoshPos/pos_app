@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/bottom_nav_bar.dart';
 import '../../../../core/widgets/common_scaffold.dart';
 import '../../viewmodel/running_orders_viewmodel.dart';
 import '../../../dashboard/view/widgets/chat_support_button.dart';
@@ -36,21 +35,15 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
           onOutletSelected: _viewModel.setSelectedOutlet,
           onLightBulbTap: () {},
           body: _buildBody(),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              OrderSummaryBottomBar(
-                totalOrders: _viewModel.selectedTabIndex == 0
-                    ? _viewModel.totalOrderCount
-                    : _viewModel.totalTableCount,
-                totalAmount: _viewModel.totalEstimatedAmount,
-                orderLabel: _viewModel.selectedTabIndex == 0
-                    ? 'Total Running Orders'
-                    : 'Total Running Tables',
-                amountLabel: 'Estimated Total',
-              ),
-              _buildBottomNav(),
-            ],
+          bottomNavigationBar: OrderSummaryBottomBar(
+            totalOrders: _viewModel.selectedTabIndex == 0
+                ? _viewModel.totalOrderCount
+                : _viewModel.totalTableCount,
+            totalAmount: _viewModel.totalEstimatedAmount,
+            orderLabel: _viewModel.selectedTabIndex == 0
+                ? 'Total Running Orders'
+                : 'Total Running Tables',
+            amountLabel: 'Estimated Total',
           ),
           floatingActionButton: ChatSupportButton(
             onTap: () {
@@ -194,9 +187,5 @@ class _RunningOrdersPageState extends State<RunningOrdersPage> {
         return const SizedBox.shrink();
       },
     );
-  }
-
-  Widget _buildBottomNav() {
-    return const BottomNavBar(currentIndex: 0);
   }
 }
