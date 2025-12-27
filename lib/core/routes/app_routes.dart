@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../features/dashboard/view/pages/dashboard_page.dart';
 import '../../features/dashboard/view/pages/notification_page.dart';
+import '../../features/more/view/pages/item_out_of_stock_page.dart';
 import '../../features/more/view/pages/menu_and_store_page.dart';
 import '../../features/more/view/pages/online_orders_page.dart';
+import '../../features/more/view/pages/outlet_type_page.dart';
 import '../../features/more/view/pages/pending_purchase_page.dart';
 import '../../features/more/view/pages/running_orders_page.dart';
 import '../../features/more/view/pages/store_status_tracking_page.dart';
@@ -18,7 +20,9 @@ class AppRoutes {
   static const String onlineOrders = 'online_orders';
   static const String menuStoreActions = 'menu_store_actions';
   static const String storeStatusTracking = 'store_status_tracking';
+  static const String itemOutOfStock = 'item_out_of_stock';
   static const String thirdpartyConfig = 'thirdparty_config';
+  static const String outletType = 'outlet_type';
   static const String pendingPurchases = 'pending_purchases';
   static const String notification = 'notification';
 
@@ -31,6 +35,8 @@ class AppRoutes {
     menuStoreActions: (_) => const MenuAndStorePage(),
     thirdpartyConfig: (_) => const MenuAndStorePage(),
     storeStatusTracking: (_) => const StoreStatusTrackingPage(),
+    itemOutOfStock: (_) => const ItemOutOfStockPage(),
+    outletType: (_) => const OutletTypePage(),
     pendingPurchases: (_) => const PendingPurchasePage(),
     notification: (_) => const NotificationPage(),
   };

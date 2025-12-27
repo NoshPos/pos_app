@@ -80,7 +80,7 @@ class DrawerMenuItemModel {
           ),
           DrawerMenuItemModel(
             id: 'item_out_of_stock',
-            title: 'Item Out of Stock Tracking',
+            title: 'Item Out-of-Stock Tracking',
             icon: Icons.inventory_outlined,
             type: MenuItemType.subMenuItem,
           ),
@@ -179,13 +179,13 @@ class DrawerMenuItemModel {
           ),
           const DrawerMenuItemModel(
             id: 'delete_outlet',
-            title: 'Delete_outlet',
+            title: 'Delete Outlet',
             icon: Icons.delete_outline,
             type: MenuItemType.subMenuItem,
           ),
           const DrawerMenuItemModel(
             id: 'petpooja_apps',
-            title: 'Petpooja APPs',
+            title: 'PetPooja APPs',
             icon: Icons.apps_outlined,
             type: MenuItemType.subMenuItem,
           ),
