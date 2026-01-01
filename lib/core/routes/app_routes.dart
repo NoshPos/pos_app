@@ -14,6 +14,7 @@ import '../../features/more/view/pages/outlet_type_page.dart';
 import '../../features/more/view/pages/pending_purchase_page.dart';
 import '../../features/more/view/pages/running_orders_page.dart';
 import '../../features/more/view/pages/store_status_tracking_page.dart';
+import '../../features/more/view/pages/thirdparty_config_page.dart';
 
 /// Centralized route names for the entire app
 class AppRoutes {
@@ -45,7 +46,7 @@ class AppRoutes {
     runningOrders: (_) => const RunningOrdersPage(),
     onlineOrders: (_) => const OnlineOrdersPage(),
     menuStoreActions: (_) => const MenuAndStorePage(),
-    thirdpartyConfig: (_) => const MenuAndStorePage(),
+    thirdpartyConfig: (_) => const ThirdPartyConfigPage(),
     storeStatusTracking: (_) => const StoreStatusTrackingPage(),
     itemOutOfStock: (_) => const ItemOutOfStockPage(),
     outletType: (_) => const OutletTypePage(),
