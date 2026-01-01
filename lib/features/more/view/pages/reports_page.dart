@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/common_scaffold.dart';
 import '../../viewmodel/reports_viewmodel.dart';
 import '../../../dashboard/view/widgets/chat_support_button.dart';
+import 'sales_report_detail_page.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -366,12 +367,22 @@ class _ReportsPageState extends State<ReportsPage> {
           const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerRight,
-            
-            child: Text(
-              'View Details',
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w500,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        SalesReportDetailPage(reportTitle: report.title),
+                  ),
+                );
+              },
+              child: Text(
+                'View Details',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
