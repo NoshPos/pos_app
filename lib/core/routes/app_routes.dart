@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/features/more/view/pages/franchise_management_page.dart';
 import '../../features/dashboard/view/pages/dashboard_page.dart';
 import '../../features/dashboard/view/pages/notification_page.dart';
 import '../../features/more/view/pages/admin_group_page.dart';
@@ -40,6 +41,7 @@ class AppRoutes {
   static const String onlineStoreLogs = 'online_store_logs';
   static const String onlineItemLogs = 'online_item_logs';
   static const String reports = 'reports';
+  static const String franchiseManagement = 'franchise_management';
 
   /// Map of route names to their corresponding page widgets
   /// This makes navigation scalable - just add entries here for new pages
@@ -61,6 +63,7 @@ class AppRoutes {
     onlineStoreLogs: (_) => const OnlineStoreLogsPage(),
     onlineItemLogs: (_) => const OnlineItemLogsPage(),
     reports: (_) => const ReportsPage(),
+    franchiseManagement: (_) => const FranchiseManagementPage(),
   };
 
   /// Check if a route exists
