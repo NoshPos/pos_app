@@ -53,19 +53,6 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Time Wise button
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: OutlinedButton(
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                            ),
-                            child: const Text('Time Wise'),
-                          ),
-                        ),
                         const SizedBox(height: 16),
                         // Filters section
                         _buildFiltersSection(colorScheme, textTheme),
@@ -77,10 +64,16 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
                         _buildDataTable(colorScheme, textTheme),
                         const SizedBox(height: 16),
                         // Showing entries text
-                        Text(
-                          'Showing 1 to 2 of 2 entries',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                        Align(
+                          alignment: Alignment.center,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: Text(
+                              'Showing 1 to 2 of 2 entries',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -138,7 +131,7 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
       children: [
         // Order Date label
         Text(
-          'Order Date',
+          'Order Date and Time',
           style: textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -187,8 +180,8 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
           child: ElevatedButton(
             onPressed: _viewModel.search,
             style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.error,
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -208,14 +201,38 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
   ) {
     return InkWell(
       onTap: () async {
-        final picked = await showDatePicker(
+        final pickedDate = await showDatePicker(
           context: context,
           initialDate: date,
           firstDate: DateTime(2020),
           lastDate: DateTime(2030),
         );
-        if (picked != null) {
-          onDateSelected(picked);
+        if (pickedDate != null) {
+          if (!context.mounted) return;
+          final pickedTime = await showTimePicker(
+            context: context,
+            initialTime: TimeOfDay.fromDateTime(date),
+          );
+          if (pickedTime != null) {
+            final newDateTime = DateTime(
+              pickedDate.year,
+              pickedDate.month,
+              pickedDate.day,
+              pickedTime.hour,
+              pickedTime.minute,
+            );
+            onDateSelected(newDateTime);
+          } else {
+            // If time picker is cancelled, keep the original time
+            final newDateTime = DateTime(
+              pickedDate.year,
+              pickedDate.month,
+              pickedDate.day,
+              date.hour,
+              date.minute,
+            );
+            onDateSelected(newDateTime);
+          }
         }
       },
       child: Container(
@@ -233,7 +250,7 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
             ),
             const SizedBox(width: 12),
             Text(
-              DateFormat('yyyy-MM-dd').format(date),
+              DateFormat('yyyy-MM-dd HH:mm').format(date),
               style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
             ),
           ],
@@ -366,23 +383,71 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
     return Row(
       children: [
         // Columns dropdown
-        OutlinedButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.view_column),
-          label: const Text('Columns'),
-          style: OutlinedButton.styleFrom(
-            backgroundColor: colorScheme.error,
-            foregroundColor: Colors.white,
+        PopupMenuButton<String>(
+          offset: const Offset(10, 50),
+          icon: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.view_column, color: colorScheme.onPrimary, size: 20),
+                const SizedBox(width: 8),
+                Text('Columns', style: TextStyle(color: colorScheme.onPrimary)),
+              ],
+            ),
           ),
+          itemBuilder: (context) {
+            return [
+              PopupMenuItem<String>(
+                enabled: true,
+                padding: EdgeInsets.zero,
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 300),
+
+                  width: 160,
+                  child: StatefulBuilder(
+                    builder: (context, setState) {
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _viewModel.columns.length,
+                        itemBuilder: (context, index) {
+                          final column = _viewModel.columns[index];
+                          return CheckboxListTile(
+                            dense: true,
+                            contentPadding: const EdgeInsets.only(
+                              left: 16,
+                              right: 8,
+                            ),
+                            title: Text(
+                              column.displayName,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            value: column.isVisible,
+                            onChanged: (value) {
+                              _viewModel.toggleColumn(column.id);
+                              setState(() {});
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ];
+          },
         ),
         const Spacer(),
         // Excel button
         OutlinedButton(
           onPressed: _viewModel.exportToExcel,
           style: OutlinedButton.styleFrom(
-            backgroundColor: colorScheme.error,
-            foregroundColor: Colors.white,
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
           child: const Text('Excel'),
@@ -392,8 +457,8 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
         OutlinedButton(
           onPressed: _viewModel.printReport,
           style: OutlinedButton.styleFrom(
-            backgroundColor: Colors.grey.shade600,
-            foregroundColor: Colors.white,
+            backgroundColor: colorScheme.secondary,
+            foregroundColor: colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
           child: const Text('Print'),
@@ -408,74 +473,252 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
         border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
-        children: [
-          // Table header
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Column(
+          children: [
+            // Table header
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
+                ),
+              ),
+              child: Row(
+                children: [
+                  _buildHeaderCell('Restaurants', 150),
+                  ..._buildDynamicHeaders(),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'Restaurants',
-                    style: textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'Invoice Nos.',
-                    style: textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'Total no. of bills',
-                    style: textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
+            // Summary rows
+            if (_viewModel.summary != null) ...[
+              _buildSummaryRow(
+                'Total',
+                _viewModel.summary!,
+                colorScheme,
+                textTheme,
+              ),
+              _buildSummaryRow(
+                'Min.',
+                _viewModel.summary!,
+                colorScheme,
+                textTheme,
+              ),
+              _buildSummaryRow(
+                'Max.',
+                _viewModel.summary!,
+                colorScheme,
+                textTheme,
+              ),
+              _buildSummaryRow(
+                'Avg.',
+                _viewModel.summary!,
+                colorScheme,
+                textTheme,
+              ),
+            ],
+            // Data rows
+            ..._viewModel.salesData.map(
+              (data) => _buildDataRow(data, colorScheme, textTheme),
             ),
-          ),
-          // Summary rows
-          if (_viewModel.summary != null) ...[
-            _buildSummaryRow('Total', _viewModel.summary!.total, colorScheme),
-            _buildSummaryRow('Min.', _viewModel.summary!.min, colorScheme),
-            _buildSummaryRow('Max.', _viewModel.summary!.max, colorScheme),
-            _buildSummaryRow('Avg.', _viewModel.summary!.avg, colorScheme),
           ],
-          // Data rows
-          ..._viewModel.salesData.map(
-            (data) => _buildDataRow(
-              data.restaurantName,
-              data.invoiceNumbers,
-              data.totalBills.toString(),
-              colorScheme,
-              textTheme,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildSummaryRow(String label, int value, ColorScheme colorScheme) {
+  Widget _buildHeaderCell(String text, double width) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        text,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  List<Widget> _buildDynamicHeaders() {
+    final headers = <Widget>[];
+    final columnData = [
+      ('invoice_nos', 'Invoice Nos.', 120.0),
+      ('total_bills', 'Total no. of bills', 120.0),
+      ('my_amount', 'My Amount', 120.0),
+      ('total_discount', 'Total Discount', 120.0),
+      ('net_sales', 'Net Sales\n(M.A - T.D)', 120.0),
+      ('delivery_charge', 'Delivery Charge', 120.0),
+      ('container_charge', 'Container Charge', 120.0),
+      ('service_charge', 'Service Charge', 120.0),
+      ('additional_charge', 'Additional Charge', 120.0),
+      ('total_tax', 'Total Tax', 120.0),
+      ('round_off', 'Round Off', 100.0),
+      ('waived_off', 'Waived off', 100.0),
+      ('total_sales', 'Total Sales', 120.0),
+      ('online_tax', 'Online Tax Calculated', 150.0),
+      ('gst_merchant', 'GST Paid by Merchant', 150.0),
+      ('gst_ecommerce', 'GST Paid by Ecommerce', 160.0),
+      ('cash', 'Cash', 100.0),
+      ('card', 'Card', 100.0),
+      ('due_payment', 'Due Payment', 120.0),
+      ('other', 'Other', 100.0),
+      ('wallet', 'Wallet', 100.0),
+      ('online', 'Online', 100.0),
+      ('pax', 'Pax', 80.0),
+      ('data_synced', 'Data Synced', 150.0),
+    ];
+
+    for (final (id, name, width) in columnData) {
+      final column = _viewModel.columns.firstWhere((c) => c.id == id);
+      if (column.isVisible) {
+        headers.add(_buildHeaderCell(name, width));
+      }
+    }
+
+    return headers;
+  }
+
+  List<Widget> _buildDynamicSummaryCells(
+    SalesReportSummary summary,
+    String label,
+  ) {
+    final cells = <Widget>[];
+
+    String getBillsCount() {
+      if (label == 'Total') return summary.total.toString();
+      if (label == 'Min.') return summary.min.toString();
+      if (label == 'Max.') return summary.max.toString();
+      return summary.avg.toString();
+    }
+
+    final cellData = [
+      ('invoice_nos', '', 120.0, false),
+      ('total_bills', getBillsCount(), 120.0, false),
+      ('my_amount', summary.myAmount.toStringAsFixed(2), 120.0, false),
+      (
+        'total_discount',
+        summary.totalDiscount.toStringAsFixed(2),
+        120.0,
+        false,
+      ),
+      ('net_sales', summary.netSales.toStringAsFixed(2), 120.0, false),
+      (
+        'delivery_charge',
+        summary.deliveryCharge.toStringAsFixed(2),
+        120.0,
+        false,
+      ),
+      (
+        'container_charge',
+        summary.containerCharge.toStringAsFixed(2),
+        120.0,
+        false,
+      ),
+      (
+        'service_charge',
+        summary.serviceCharge.toStringAsFixed(2),
+        120.0,
+        false,
+      ),
+      (
+        'additional_charge',
+        summary.additionalCharge.toStringAsFixed(2),
+        120.0,
+        false,
+      ),
+      ('total_tax', summary.totalTax.toStringAsFixed(2), 120.0, false),
+      ('round_off', summary.roundOff.toStringAsFixed(2), 100.0, false),
+      ('waived_off', summary.waivedOff.toStringAsFixed(2), 100.0, false),
+      ('total_sales', summary.totalSales.toStringAsFixed(2), 120.0, false),
+      (
+        'online_tax',
+        summary.onlineTaxCalculated.toStringAsFixed(2),
+        150.0,
+        false,
+      ),
+      (
+        'gst_merchant',
+        summary.gstPaidByMerchant.toStringAsFixed(2),
+        150.0,
+        false,
+      ),
+      (
+        'gst_ecommerce',
+        summary.gstPaidByEcommerce.toStringAsFixed(2),
+        160.0,
+        false,
+      ),
+      ('cash', summary.cash.toStringAsFixed(2), 100.0, false),
+      ('card', summary.card.toStringAsFixed(2), 100.0, false),
+      ('due_payment', summary.duePayment.toStringAsFixed(2), 120.0, false),
+      ('other', summary.other.toStringAsFixed(2), 100.0, false),
+      ('wallet', summary.wallet.toStringAsFixed(2), 100.0, false),
+      ('online', summary.online.toStringAsFixed(2), 100.0, false),
+      ('pax', summary.pax.toString(), 80.0, false),
+      ('data_synced', '', 150.0, false),
+    ];
+
+    for (final (id, value, width, _) in cellData) {
+      final column = _viewModel.columns.firstWhere((c) => c.id == id);
+      if (column.isVisible) {
+        cells.add(
+          _buildCell(value, width, isBold: false, textColor: Colors.black),
+        );
+      }
+    }
+
+    return cells;
+  }
+
+  List<Widget> _buildDynamicDataCells(RestaurantSalesData data) {
+    final cells = <Widget>[];
+
+    final cellData = [
+      ('invoice_nos', data.invoiceNumbers, 120.0),
+      ('total_bills', data.totalBills.toString(), 120.0),
+      ('my_amount', data.myAmount.toStringAsFixed(2), 120.0),
+      ('total_discount', data.totalDiscount.toStringAsFixed(0), 120.0),
+      ('net_sales', data.netSales.toStringAsFixed(2), 120.0),
+      ('delivery_charge', data.deliveryCharge.toStringAsFixed(0), 120.0),
+      ('container_charge', data.containerCharge.toStringAsFixed(0), 120.0),
+      ('service_charge', data.serviceCharge.toStringAsFixed(0), 120.0),
+      ('additional_charge', data.additionalCharge.toStringAsFixed(0), 120.0),
+      ('total_tax', data.totalTax.toStringAsFixed(2), 120.0),
+      ('round_off', data.roundOff.toStringAsFixed(2), 100.0),
+      ('waived_off', data.waivedOff.toStringAsFixed(0), 100.0),
+      ('total_sales', data.totalSales.toStringAsFixed(0), 120.0),
+      ('online_tax', data.onlineTaxCalculated.toStringAsFixed(0), 150.0),
+      ('gst_merchant', data.gstPaidByMerchant.toStringAsFixed(0), 150.0),
+      ('gst_ecommerce', data.gstPaidByEcommerce.toStringAsFixed(0), 160.0),
+      ('cash', data.cash.toStringAsFixed(0), 100.0),
+      ('card', data.card.toStringAsFixed(0), 100.0),
+      ('due_payment', data.duePayment.toStringAsFixed(0), 120.0),
+      ('other', data.other.toStringAsFixed(0), 100.0),
+      ('wallet', data.wallet.toStringAsFixed(0), 100.0),
+      ('online', data.online.toStringAsFixed(0), 100.0),
+      ('pax', data.pax.toString(), 80.0),
+      ('data_synced', data.dataSynced, 150.0),
+    ];
+
+    for (final (id, value, width) in cellData) {
+      final column = _viewModel.columns.firstWhere((c) => c.id == id);
+      if (column.isVisible) {
+        cells.add(_buildCell(value, width));
+      }
+    }
+
+    return cells;
+  }
+
+  Widget _buildSummaryRow(
+    String label,
+    SalesReportSummary summary,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -486,60 +729,51 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
       ),
       child: Row(
         children: [
-          Expanded(
-            flex: 3,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          const Expanded(flex: 2, child: SizedBox()),
-          Expanded(
-            flex: 2,
-            child: Text(
-              value.toString(),
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
+          _buildCell(label, 150, isBold: true, textColor: Colors.black),
+          ..._buildDynamicSummaryCells(summary, label),
         ],
       ),
     );
   }
 
   Widget _buildDataRow(
-    String restaurant,
-    String invoiceNos,
-    String bills,
+    RestaurantSalesData data,
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
         border: Border(
           bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
         ),
       ),
       child: Row(
         children: [
-          Expanded(
-            flex: 3,
-            child: Text(restaurant, style: textTheme.bodyMedium),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(invoiceNos, style: textTheme.bodyMedium),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              bills,
-              textAlign: TextAlign.right,
-              style: textTheme.bodyMedium,
-            ),
-          ),
+          _buildCell(data.restaurantName, 150),
+          ..._buildDynamicDataCells(data),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCell(
+    String text,
+    double width, {
+    bool isBold = false,
+    Color? textColor,
+  }) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
+          color: textColor,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
