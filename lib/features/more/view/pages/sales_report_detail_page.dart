@@ -250,7 +250,7 @@ class _SalesReportDetailPageState extends State<SalesReportDetailPage> {
             ),
             const SizedBox(width: 12),
             Text(
-              DateFormat('yyyy-MM-dd HH:mm').format(date),
+              DateFormat('yyyy-MM-dd  HH:mm').format(date),
               style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
             ),
           ],
