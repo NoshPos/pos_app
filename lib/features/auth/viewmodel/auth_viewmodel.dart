@@ -25,7 +25,7 @@ class AuthState {
 
 /// Auth repository provider
 @riverpod
-AuthRepository authRepository(Ref ref) {
+AuthRepository authRepository(AuthRepositoryRef ref) {
   final client = ref.watch(supabaseClientProvider);
   return AuthRepositoryImpl(client);
 }
@@ -99,6 +99,23 @@ class AuthViewModel extends _$AuthViewModel {
       },
       (_) {
         state = const AuthState();
+        return true;
+      },
+    );
+  }
+
+  Future<bool> signInWithGoogle() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    final result = await _repo.signInWithGoogle();
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(isLoading: false, error: failure.message);
+        return false;
+      },
+      (user) {
+        state = state.copyWith(isLoading: false, user: user);
         return true;
       },
     );

@@ -6,7 +6,7 @@ part of 'auth_viewmodel.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$authRepositoryHash() => r'aed19c5335e5bd38f53be39c5cdd5ee865cf4075';
+String _$authRepositoryHash() => r'234c48f4d83559674c59291994bcdcdec26d0d35';
 
 /// Auth repository provider
 ///
@@ -25,7 +25,7 @@ final authRepositoryProvider = AutoDisposeProvider<AuthRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthRepositoryRef = AutoDisposeProviderRef<AuthRepository>;
-String _$authViewModelHash() => r'dc594cbc7633f984c72c458cffd2d60ee9401db2';
+String _$authViewModelHash() => r'e02e27c9df09bab9719007757d32ca432f7980a7';
 
 /// Auth ViewModel
 ///
