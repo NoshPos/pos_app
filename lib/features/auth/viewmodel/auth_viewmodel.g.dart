@@ -25,7 +25,7 @@ final authRepositoryProvider = AutoDisposeProvider<AuthRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthRepositoryRef = AutoDisposeProviderRef<AuthRepository>;
-String _$authViewModelHash() => r'e02e27c9df09bab9719007757d32ca432f7980a7';
+String _$authViewModelHash() => r'0b312ad751da07d0d749613dfc3362e5d16dc4ab';
 
 /// Auth ViewModel
 ///

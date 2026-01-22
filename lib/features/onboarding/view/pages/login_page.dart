@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/features/auth/viewmodel/auth_viewmodel.dart';
+import 'package:pos_app/features/auth/view/widgets/otp_bottom_sheet.dart';
 import '../../../dashboard/view/pages/dashboard_page.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -12,11 +13,69 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
     _emailController.dispose();
     super.dispose();
+  }
+
+  /// Check if input is a phone number (starts with + or contains only digits)
+  bool _isPhoneNumber(String input) {
+    final trimmed = input.trim();
+    // Phone number should start with + or be all digits
+    if (trimmed.startsWith('+')) {
+      return RegExp(r'^\+[0-9]{10,15}$').hasMatch(trimmed);
+    }
+    // If it's just digits (10+ digits), treat as phone
+    return RegExp(r'^[0-9]{10,15}$').hasMatch(trimmed);
+  }
+
+  /// Format phone number with country code if needed
+  String _formatPhoneNumber(String input) {
+    final trimmed = input.trim();
+    if (trimmed.startsWith('+')) {
+      return trimmed;
+    }
+    // Default to India country code if not provided
+    return '+91$trimmed';
+  }
+
+  Future<void> _handleContinue() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final input = _emailController.text.trim();
+    final isPhone = _isPhoneNumber(input);
+    final destination = isPhone ? _formatPhoneNumber(input) : input;
+
+    bool success;
+    if (isPhone) {
+      success = await ref
+          .read(authViewModelProvider.notifier)
+          .sendPhoneOtp(phone: destination);
+    } else {
+      success = await ref
+          .read(authViewModelProvider.notifier)
+          .sendEmailOtp(email: destination);
+    }
+
+    if (success && mounted) {
+      // Show OTP bottom sheet
+      final verified = await showOtpBottomSheet(
+        context: context,
+        ref: ref,
+        destination: destination,
+        isPhone: isPhone,
+      );
+
+      if (verified && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+        );
+      }
+    }
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -127,6 +186,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Widget _buildLoginCard(AuthState authState) {
     final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -141,172 +201,194 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Sign In',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sign In',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'to access Account',
-            style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 24),
-          // Email/Mobile Input
-          TextField(
-            controller: _emailController,
-            decoration: InputDecoration(
-              hintText: 'Email address or mobile number',
-              hintStyle: TextStyle(
-                color: colorScheme.onSurfaceVariant,
+            const SizedBox(height: 4),
+            Text(
+              'to access Account',
+              style: TextStyle(
                 fontSize: 14,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorScheme.outline),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorScheme.outline),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorScheme.primary),
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          // Continue Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DashboardPage(),
-                  ),
-                );
+            const SizedBox(height: 24),
+            // Email/Mobile Input
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter email or mobile number';
+                }
+                final trimmed = value.trim();
+                // Check if it's a valid email
+                final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                // Check if it's a valid phone (10-15 digits, optionally with +)
+                final phoneRegex = RegExp(r'^(\+)?[0-9]{10,15}$');
+                if (!emailRegex.hasMatch(trimmed) &&
+                    !phoneRegex.hasMatch(trimmed)) {
+                  return 'Please enter a valid email or mobile number';
+                }
+                return null;
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              decoration: InputDecoration(
+                hintText: 'Email address or mobile number',
+                hintStyle: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 14,
                 ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Continue',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: colorScheme.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: colorScheme.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: colorScheme.primary),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: colorScheme.error),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          // Or Divider
-          Row(
-            children: [
-              Expanded(child: Divider(color: colorScheme.outline)),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'or',
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 14,
+            const SizedBox(height: 16),
+            // Continue Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: authState.isLoading ? null : _handleContinue,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  elevation: 0,
                 ),
-              ),
-              Expanded(child: Divider(color: colorScheme.outline)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Sign in with Google Button
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: authState.isLoading ? null : _handleGoogleSignIn,
-              icon: authState.isLoading
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.primary,
+                child: authState.isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.onPrimary,
+                          ),
+                        ),
+                      )
+                    : const Text(
+                        'Continue',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    )
-                  : Image.network(
-                      'https://www.google.com/favicon.ico',
-                      width: 20,
-                      height: 20,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.g_mobiledata,
-                          size: 24,
-                          color: colorScheme.error,
-                        );
-                      },
-                    ),
-              label: Text(
-                authState.isLoading ? 'Signing in...' : 'Sign in with Google',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                side: BorderSide(color: colorScheme.outline),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          // New in Pos? Contact Us
-          Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            const SizedBox(height: 20),
+            // Or Divider
+            Row(
               children: [
-                Text(
-                  'New in POS? ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    // Handle contact us
-                  },
+                Expanded(child: Divider(color: colorScheme.outline)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    'Contact Us',
+                    'or',
                     style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
                     ),
                   ),
                 ),
+                Expanded(child: Divider(color: colorScheme.outline)),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            // Sign in with Google Button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: authState.isLoading ? null : _handleGoogleSignIn,
+                icon: Image.network(
+                  'https://www.google.com/favicon.ico',
+                  width: 20,
+                  height: 20,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.g_mobiledata,
+                      size: 24,
+                      color: colorScheme.error,
+                    );
+                  },
+                ),
+                label: Text(
+                  'Sign in with Google',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: colorScheme.outline),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // New in Pos? Contact Us
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'New in POS? ',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      // Handle contact us
+                    },
+                    child: Text(
+                      'Contact Us',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
