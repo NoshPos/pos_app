@@ -24,6 +24,24 @@ abstract class AuthRepository {
 
   Future<Either<Failure, User>> signInWithGoogle();
 
+  /// Send OTP to email for passwordless sign-in
+  Future<Either<Failure, void>> sendEmailOtp({required String email});
+
+  /// Verify email OTP and sign in
+  Future<Either<Failure, User>> verifyEmailOtp({
+    required String email,
+    required String otp,
+  });
+
+  /// Send OTP to phone number
+  Future<Either<Failure, void>> sendPhoneOtp({required String phone});
+
+  /// Verify phone OTP and sign in
+  Future<Either<Failure, User>> verifyPhoneOtp({
+    required String phone,
+    required String otp,
+  });
+
   Future<Either<Failure, void>> signOut();
 
   Future<Either<Failure, void>> resetPassword({required String email});
@@ -108,6 +126,78 @@ class AuthRepositoryImpl implements AuthRepository {
       return left(Failure(message: e.message));
     } catch (e) {
       return left(Failure(message: 'Failed to send reset email: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> sendEmailOtp({required String email}) async {
+    try {
+      await _client.auth.signInWithOtp(email: email, shouldCreateUser: true);
+      return right(null);
+    } on AuthException catch (e) {
+      return left(Failure(message: e.message));
+    } catch (e) {
+      return left(Failure(message: 'Failed to send OTP: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, User>> verifyEmailOtp({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final response = await _client.auth.verifyOTP(
+        type: OtpType.email,
+        email: email,
+        token: otp,
+      );
+
+      if (response.user == null) {
+        return left(const Failure(message: 'OTP verification failed.'));
+      }
+
+      return right(response.user!);
+    } on AuthException catch (e) {
+      return left(Failure(message: e.message));
+    } catch (e) {
+      return left(Failure(message: 'OTP verification failed: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> sendPhoneOtp({required String phone}) async {
+    try {
+      await _client.auth.signInWithOtp(phone: phone, shouldCreateUser: true);
+      return right(null);
+    } on AuthException catch (e) {
+      return left(Failure(message: e.message));
+    } catch (e) {
+      return left(Failure(message: 'Failed to send OTP: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, User>> verifyPhoneOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    try {
+      final response = await _client.auth.verifyOTP(
+        type: OtpType.sms,
+        phone: phone,
+        token: otp,
+      );
+
+      if (response.user == null) {
+        return left(const Failure(message: 'OTP verification failed.'));
+      }
+
+      return right(response.user!);
+    } on AuthException catch (e) {
+      return left(Failure(message: e.message));
+    } catch (e) {
+      return left(Failure(message: 'OTP verification failed: $e'));
     }
   }
 

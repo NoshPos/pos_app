@@ -107,3 +107,43 @@ test-results/
 # Logs
 *.log
 logs/
+
+# Pods (iOS dependencies - can be regenerated)
+ios/Pods/
+ios/Podfile.lock
+
+# Build directories
+build/
+.dart_tool/
+.packages
+
+# Ephemeral files (auto-generated)
+**/ephemeral/
+ios/Flutter/ephemeral/
+macos/Flutter/ephemeral/
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# Flutter generated files
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Generated Dart files (Riverpod, Freezed, etc.)
+*.g.dart
+*.freezed.dart
+
+# Pubspec lock (optional - some prefer to commit this)
+# pubspec.lock
+
+# Android build cache
+android/.gradle/
+android/app/build/
+android/build/
+
+# Xcode build cache
+ios/build/
+macos/build/
+
+# Web build
+web/build/
