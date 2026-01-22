@@ -47,6 +47,8 @@ dependencies:
   
   # Environment Variables
   flutter_dotenv: ^5.2.1
+  firebase_core: ^4.4.0
+  firebase_auth: ^6.1.4
 
 dev_dependencies:
   flutter_test:

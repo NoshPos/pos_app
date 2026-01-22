@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pos_app/core/providers/supabase_provider.dart';
 import 'package:pos_app/features/auth/repository/auth_repository.dart';
+import 'package:pos_app/features/auth/repository/firebase_phone_auth_repository.dart';
 
 part 'auth_viewmodel.g.dart';
 
@@ -14,6 +15,7 @@ class AuthState {
   final bool otpSent;
   final String? pendingEmail;
   final String? pendingPhone;
+  final bool isPhoneAuthenticatedViaFirebase;
 
   const AuthState({
     this.user,
@@ -22,6 +24,7 @@ class AuthState {
     this.otpSent = false,
     this.pendingEmail,
     this.pendingPhone,
+    this.isPhoneAuthenticatedViaFirebase = false,
   });
 
   AuthState copyWith({
@@ -31,6 +34,7 @@ class AuthState {
     bool? otpSent,
     String? pendingEmail,
     String? pendingPhone,
+    bool? isPhoneAuthenticatedViaFirebase,
   }) {
     return AuthState(
       user: user ?? this.user,
@@ -39,25 +43,38 @@ class AuthState {
       otpSent: otpSent ?? this.otpSent,
       pendingEmail: pendingEmail ?? this.pendingEmail,
       pendingPhone: pendingPhone ?? this.pendingPhone,
+      isPhoneAuthenticatedViaFirebase:
+          isPhoneAuthenticatedViaFirebase ??
+          this.isPhoneAuthenticatedViaFirebase,
     );
   }
 }
 
-/// Auth repository provider
+/// Auth repository provider (Supabase - for email, Google auth)
 @riverpod
 AuthRepository authRepository(AuthRepositoryRef ref) {
   final client = ref.watch(supabaseClientProvider);
   return AuthRepositoryImpl(client);
 }
 
+/// Firebase Phone Auth repository provider (for phone OTP - free)
+@riverpod
+FirebasePhoneAuthRepository firebasePhoneAuthRepository(
+  FirebasePhoneAuthRepositoryRef ref,
+) {
+  return FirebasePhoneAuthRepository();
+}
+
 /// Auth ViewModel
 @riverpod
 class AuthViewModel extends _$AuthViewModel {
   late final AuthRepository _repo;
+  late final FirebasePhoneAuthRepository _firebasePhoneRepo;
 
   @override
   AuthState build() {
     _repo = ref.read(authRepositoryProvider);
+    _firebasePhoneRepo = ref.read(firebasePhoneAuthRepositoryProvider);
     final currentUser = _repo.currentUser;
     return AuthState(user: currentUser);
   }
@@ -205,11 +222,11 @@ class AuthViewModel extends _$AuthViewModel {
     );
   }
 
-  /// Send OTP to phone number
+  /// Send OTP to phone number using Firebase (FREE)
   Future<bool> sendPhoneOtp({required String phone}) async {
     state = state.copyWith(isLoading: true, error: null);
 
-    final result = await _repo.sendPhoneOtp(phone: phone);
+    final result = await _firebasePhoneRepo.sendPhoneOtp(phone: phone);
 
     return result.fold(
       (failure) {
@@ -228,7 +245,7 @@ class AuthViewModel extends _$AuthViewModel {
     );
   }
 
-  /// Verify phone OTP and sign in
+  /// Verify phone OTP using Firebase and mark as authenticated
   Future<bool> verifyPhoneOtp({required String otp}) async {
     final phone = state.pendingPhone;
     if (phone == null) {
@@ -238,15 +255,22 @@ class AuthViewModel extends _$AuthViewModel {
 
     state = state.copyWith(isLoading: true, error: null);
 
-    final result = await _repo.verifyPhoneOtp(phone: phone, otp: otp);
+    final result = await _firebasePhoneRepo.verifyPhoneOtp(otp: otp);
 
     return result.fold(
       (failure) {
         state = state.copyWith(isLoading: false, error: failure.message);
         return false;
       },
-      (user) {
-        state = AuthState(user: user);
+      (firebaseUser) {
+        // Phone verified via Firebase - user is authenticated
+        // You can optionally sync with Supabase here if needed
+        state = state.copyWith(
+          isLoading: false,
+          otpSent: false,
+          pendingPhone: null,
+          isPhoneAuthenticatedViaFirebase: true,
+        );
         return true;
       },
     );
