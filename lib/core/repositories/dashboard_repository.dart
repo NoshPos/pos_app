@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:fpdart/fpdart.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pos_app/core/error/failure.dart';
@@ -112,35 +113,70 @@ class DashboardRepositoryImpl implements DashboardRepository {
   }) async {
     try {
       final dateStr = date.toIso8601String().split('T')[0];
+      developer.log(
+        'DashboardRepo: getDashboardStats - storeId=$storeId, date=$dateStr',
+        name: 'DashboardRepo',
+      );
 
       if (storeId != null && storeId != 'all') {
         // Call Supabase RPC function for specific store
+        developer.log(
+          'DashboardRepo: Calling get_dashboard_stats RPC for store $storeId',
+          name: 'DashboardRepo',
+        );
         final response = await _client.rpc(
           'get_dashboard_stats',
           params: {'p_store_id': storeId, 'p_date': dateStr},
         );
 
+        developer.log(
+          'DashboardRepo: RPC response = $response',
+          name: 'DashboardRepo',
+        );
+
         if (response == null) {
+          developer.log(
+            'DashboardRepo: Response is null, returning empty stats',
+            name: 'DashboardRepo',
+          );
           return right(DashboardStats.empty);
         }
 
         return right(DashboardStats.fromJson(response as Map<String, dynamic>));
       } else {
         // Aggregate stats for all stores
+        developer.log(
+          'DashboardRepo: Calling get_dashboard_stats_all RPC',
+          name: 'DashboardRepo',
+        );
         final response = await _client.rpc(
           'get_dashboard_stats_all',
           params: {'p_date': dateStr},
         );
 
+        developer.log(
+          'DashboardRepo: RPC response = $response',
+          name: 'DashboardRepo',
+        );
+
         if (response == null) {
+          developer.log(
+            'DashboardRepo: Response is null, returning empty stats',
+            name: 'DashboardRepo',
+          );
           return right(DashboardStats.empty);
         }
 
         return right(DashboardStats.fromJson(response as Map<String, dynamic>));
       }
     } on PostgrestException catch (e) {
+      developer.log(
+        'DashboardRepo: PostgrestException - ${e.message}',
+        name: 'DashboardRepo',
+      );
       return left(DatabaseFailure(message: e.message, code: e.code));
     } catch (e) {
+      developer.log('DashboardRepo: Exception - $e', name: 'DashboardRepo');
       return left(Failure(message: 'Failed to fetch dashboard stats: $e'));
     }
   }

@@ -102,29 +102,27 @@ class OutletTypeViewModel extends _$OutletTypeViewModel {
     final storesResult = await _storeRepo.getAccessibleStores();
     storesResult.fold(
       (failure) => state = state.copyWith(error: failure.message),
-      (stores) => state = state.copyWith(stores: stores),
+      (stores) {
+        state = state.copyWith(stores: stores);
+        _loadOutletsFromStores(stores);
+      },
     );
-
-    _loadOutlets();
   }
 
-  void _loadOutlets() {
-    final outlets = [
-      const OutletModel(
-        id: '363317',
-        name: 'Aarthi cake Magic',
-        state: 'Tamil Nadu',
-        city: 'Chennai',
-        outletType: 'COFO - Company Owned Franchisee',
-      ),
-      const OutletModel(
-        id: '383514',
-        name: 'Ambattur Aarthi sweets and bakery',
-        state: 'Tamil Nadu',
-        city: 'Chennai',
-        outletType: 'COFO - Company Owned Franchisee',
-      ),
-    ];
+  void _loadOutletsFromStores(List<StoreModel> stores) {
+    // Convert stores to outlets - fetch outlet_type from store data or use default
+    final outlets = stores
+        .map(
+          (store) => OutletModel(
+            id: store.id,
+            name: store.name,
+            state: store.address?.split(',').lastOrNull?.trim() ?? '',
+            city: store.address?.split(',').firstOrNull?.trim() ?? '',
+            outletType:
+                'COFO - Company Owned Franchisee', // Default, will be loaded from DB
+          ),
+        )
+        .toList();
 
     // Initialize selected outlet types
     final selectedOutletTypes = <String, String>{};

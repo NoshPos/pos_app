@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pos_app/core/providers/repository_providers.dart';
 import 'package:pos_app/core/repositories/store_repository.dart';
+import 'package:pos_app/core/repositories/profile_repository.dart';
 import '../model/user_info_model.dart';
 
 part 'user_info_viewmodel.g.dart';
@@ -9,37 +10,19 @@ part 'user_info_viewmodel.g.dart';
 class UserInfoState {
   final String? selectedStoreId;
   final List<StoreModel> stores;
-  final UserInfoModel userInfo;
+  final UserInfoModel? userInfo;
   final List<UserLogEntry> logs;
   final bool isLoading;
   final String? error;
 
-  UserInfoState({
+  const UserInfoState({
     this.selectedStoreId,
     this.stores = const [],
-    UserInfoModel? userInfo,
+    this.userInfo,
     this.logs = const [],
     this.isLoading = false,
     this.error,
-  }) : userInfo = userInfo ?? _defaultUserInfo;
-
-  static final UserInfoModel _defaultUserInfo = UserInfoModel(
-    id: '1',
-    name: 'Balaji',
-    email: 'aarthysweetsandbakery@gmail.com',
-    isEmailVerified: true,
-    mobileNumbers: [
-      MobileNumber(
-        id: '1',
-        countryCode: '+91',
-        number: '9360792743',
-        isVerified: true,
-      ),
-    ],
-    is2FAEnabled: true,
-    createdAt: DateTime(2025, 1, 13, 14, 7, 20),
-    createdBy: 'Parmy Doshi',
-  );
+  });
 
   UserInfoState copyWith({
     String? selectedStoreId,
@@ -78,43 +61,60 @@ class UserInfoState {
 @riverpod
 class UserInfoViewModel extends _$UserInfoViewModel {
   late StoreRepository _storeRepo;
+  late ProfileRepository _profileRepo;
 
   @override
   UserInfoState build() {
     _storeRepo = ref.watch(storeRepositoryProvider);
+    _profileRepo = ref.watch(profileRepositoryProvider);
 
     _loadInitialData();
 
-    return UserInfoState(
-      logs: [
-        UserLogEntry(
-          id: '1',
-          changes: 'Basic Details Updated\nPassword has been changed.',
-          doneByName: 'Balaji',
-          doneByEmail: 'aarthysweetsandbakery@gmail.com',
-          browser: 'Chrome',
-          ipAddress: '152.58.222.176',
-          timestamp: DateTime(2025, 1, 20, 12, 14, 17),
-        ),
-        UserLogEntry(
-          id: '2',
-          changes: 'User Created',
-          doneByName: 'Parmy Doshi',
-          doneByEmail: 'parmy.doshi@petpooja.com',
-          browser: 'Chrome',
-          ipAddress: '14.195.74.206',
-          timestamp: DateTime(2025, 1, 13, 14, 7, 20),
-        ),
-      ],
-    );
+    return const UserInfoState();
   }
 
   Future<void> _loadInitialData() async {
+    state = state.copyWith(isLoading: true);
+
+    // Load stores
     final storesResult = await _storeRepo.getAccessibleStores();
     storesResult.fold(
       (failure) => state = state.copyWith(error: failure.message),
       (stores) => state = state.copyWith(stores: stores),
     );
+
+    // Load profile
+    final profileResult = await _profileRepo.getProfile();
+    profileResult.fold(
+      (failure) {
+        state = state.copyWith(error: failure.message);
+      },
+      (profile) {
+        // Create UserInfoModel from ProfileModel
+        final userInfo = UserInfoModel(
+          id: profile.id,
+          name: profile.fullName ?? 'Unknown',
+          email: profile.email ?? '',
+          isEmailVerified: profile.email != null,
+          mobileNumbers: profile.phone != null
+              ? [
+                  MobileNumber(
+                    id: '1',
+                    countryCode: '+91',
+                    number: profile.phone!,
+                    isVerified: true,
+                  ),
+                ]
+              : [],
+          is2FAEnabled: profile.is2FAEnabled,
+          createdAt: profile.createdAt ?? DateTime.now(),
+          createdBy: 'System',
+        );
+        state = state.copyWith(userInfo: userInfo);
+      },
+    );
+
+    state = state.copyWith(isLoading: false);
   }
 
   void setSelectedOutlet(String outletName) {
@@ -131,7 +131,8 @@ class UserInfoViewModel extends _$UserInfoViewModel {
     required String email,
     required List<MobileNumber> mobileNumbers,
   }) {
-    final updatedUserInfo = state.userInfo.copyWith(
+    if (state.userInfo == null) return false;
+    final updatedUserInfo = state.userInfo!.copyWith(
       name: name,
       email: email,
       mobileNumbers: mobileNumbers,
@@ -141,7 +142,8 @@ class UserInfoViewModel extends _$UserInfoViewModel {
   }
 
   void toggle2FA(bool enabled) {
-    final updatedUserInfo = state.userInfo.copyWith(is2FAEnabled: enabled);
+    if (state.userInfo == null) return;
+    final updatedUserInfo = state.userInfo!.copyWith(is2FAEnabled: enabled);
     state = state.copyWith(userInfo: updatedUserInfo);
   }
 
@@ -151,6 +153,7 @@ class UserInfoViewModel extends _$UserInfoViewModel {
   }
 
   bool addMobileNumber(String countryCode, String number) {
+    if (state.userInfo == null) return false;
     final newNumber = MobileNumber(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       countryCode: countryCode,
@@ -158,8 +161,8 @@ class UserInfoViewModel extends _$UserInfoViewModel {
       isVerified: false,
     );
 
-    final updatedNumbers = [...state.userInfo.mobileNumbers, newNumber];
-    final updatedUserInfo = state.userInfo.copyWith(
+    final updatedNumbers = [...state.userInfo!.mobileNumbers, newNumber];
+    final updatedUserInfo = state.userInfo!.copyWith(
       mobileNumbers: updatedNumbers,
     );
     state = state.copyWith(userInfo: updatedUserInfo);
@@ -167,10 +170,11 @@ class UserInfoViewModel extends _$UserInfoViewModel {
   }
 
   bool removeMobileNumber(String numberId) {
-    final updatedNumbers = state.userInfo.mobileNumbers
+    if (state.userInfo == null) return false;
+    final updatedNumbers = state.userInfo!.mobileNumbers
         .where((n) => n.id != numberId)
         .toList();
-    final updatedUserInfo = state.userInfo.copyWith(
+    final updatedUserInfo = state.userInfo!.copyWith(
       mobileNumbers: updatedNumbers,
     );
     state = state.copyWith(userInfo: updatedUserInfo);

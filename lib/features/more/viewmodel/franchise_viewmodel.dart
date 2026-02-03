@@ -72,26 +72,34 @@ class FranchiseViewModel extends _$FranchiseViewModel {
 
     _loadInitialData();
 
-    final defaultFranchises = [
-      FranchiseOutlet(id: '1', name: 'Aarthi cake Magic', refId: '363317'),
-      FranchiseOutlet(
-        id: '2',
-        name: 'Ambattur Aarthi sweets and bakery',
-        refId: '383514',
-      ),
-    ];
-
-    return FranchiseState(
-      franchises: defaultFranchises,
-      filteredFranchises: defaultFranchises,
-    );
+    return const FranchiseState();
   }
 
   Future<void> _loadInitialData() async {
+    state = state.copyWith(isLoading: true);
+
     final storesResult = await _storeRepo.getAccessibleStores();
     storesResult.fold(
-      (failure) => state = state.copyWith(error: failure.message),
-      (stores) => state = state.copyWith(stores: stores),
+      (failure) =>
+          state = state.copyWith(error: failure.message, isLoading: false),
+      (stores) {
+        // Convert stores to franchise outlets
+        final franchises = stores
+            .map(
+              (s) => FranchiseOutlet(
+                id: s.id,
+                name: s.name,
+                refId: s.id.substring(0, 6).toUpperCase(),
+              ),
+            )
+            .toList();
+        state = state.copyWith(
+          stores: stores,
+          franchises: franchises,
+          filteredFranchises: franchises,
+          isLoading: false,
+        );
+      },
     );
   }
 

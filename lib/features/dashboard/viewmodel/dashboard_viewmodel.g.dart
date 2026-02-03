@@ -7,7 +7,7 @@ part of 'dashboard_viewmodel.dart';
 // **************************************************************************
 
 String _$dashboardViewModelHash() =>
-    r'c5912fe47c14879f207ee8e51bb4cb2ccd69b1a6';
+    r'334469c8755fd82ac167c7da6f407788da817866';
 
 /// Dashboard ViewModel using Riverpod
 ///

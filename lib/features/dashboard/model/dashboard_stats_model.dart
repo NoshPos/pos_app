@@ -30,22 +30,20 @@ class DashboardStatsModel {
     required this.discountsPercent,
   });
 
-  /// Factory constructor for creating a default/sample instance
-  factory DashboardStatsModel.sample() {
-    return const DashboardStatsModel(
-      totalSales: '32,266.00',
-      totalOutlets: 2,
-      totalOrders: 67,
-      onlineSales: '0.00',
-      onlineSalesPercent: '0%',
-      cashCollected: '32,266.00',
-      cashCollectedPercent: '100.00%',
-      netSales: '30,742.57',
-      netSalesOutlets: 2,
-      expenses: '0.00',
-      taxes: '1,524.54',
-      discounts: '0.00',
-      discountsPercent: '0%',
-    );
-  }
+  /// Empty/default stats
+  static const DashboardStatsModel empty = DashboardStatsModel(
+    totalSales: '0.00',
+    totalOutlets: 0,
+    totalOrders: 0,
+    onlineSales: '0.00',
+    onlineSalesPercent: '0%',
+    cashCollected: '0.00',
+    cashCollectedPercent: '0%',
+    netSales: '0.00',
+    netSalesOutlets: 0,
+    expenses: '0.00',
+    taxes: '0.00',
+    discounts: '0.00',
+    discountsPercent: '0%',
+  );
 }

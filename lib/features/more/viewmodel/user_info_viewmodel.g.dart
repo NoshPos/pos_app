@@ -6,7 +6,7 @@ part of 'user_info_viewmodel.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$userInfoViewModelHash() => r'0c0e17b1cf296c4545e7d06be16a074d6e205f7e';
+String _$userInfoViewModelHash() => r'0f86bf17873a814260a4fe0c963961f13bb8b422';
 
 /// ViewModel for User Info page using Riverpod
 ///

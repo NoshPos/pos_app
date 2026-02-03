@@ -7,7 +7,7 @@ part of 'menu_trigger_logs_viewmodel.dart';
 // **************************************************************************
 
 String _$menuTriggerLogsViewModelHash() =>
-    r'27ddcbf7a921238b141d4664151757ed12031f66';
+    r'56d939613e6cb59a2c30cd65362b393a66ec051a';
 
 /// ViewModel for Menu Trigger Logs page
 ///

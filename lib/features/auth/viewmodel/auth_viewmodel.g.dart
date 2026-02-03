@@ -47,7 +47,7 @@ final firebasePhoneAuthRepositoryProvider =
 // ignore: unused_element
 typedef FirebasePhoneAuthRepositoryRef =
     AutoDisposeProviderRef<FirebasePhoneAuthRepository>;
-String _$authViewModelHash() => r'd565fbb16dc6559c48e9d7a5d26a6028e9f35d72';
+String _$authViewModelHash() => r'6c0ab0292bf3f8cb49aa1b2597c7bfd7ee796453';
 
 /// Auth ViewModel
 ///

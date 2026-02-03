@@ -7,7 +7,7 @@ part of 'running_orders_viewmodel.dart';
 // **************************************************************************
 
 String _$runningOrdersViewModelHash() =>
-    r'c66d23afbe85b0383c39af215ad48ac7f229c152';
+    r'c44a496ffe0410c48f94bad519625d89ffb96ad7';
 
 /// ViewModel for the Running Orders screen using Riverpod
 ///

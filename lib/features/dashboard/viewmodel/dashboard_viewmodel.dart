@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pos_app/core/providers/repository_providers.dart';
+import 'package:pos_app/core/providers/store_provider.dart';
 import 'package:pos_app/core/repositories/store_repository.dart';
 import 'package:pos_app/core/repositories/dashboard_repository.dart';
 
@@ -126,27 +128,40 @@ class DashboardState {
 @riverpod
 class DashboardViewModel extends _$DashboardViewModel {
   late DashboardRepository _dashboardRepo;
-  late StoreRepository _storeRepo;
 
   @override
   DashboardState build() {
     _dashboardRepo = ref.watch(dashboardRepositoryProvider);
-    _storeRepo = ref.watch(storeRepositoryProvider);
 
-    // Load initial data
-    _loadInitialData();
+    // Watch the global store state for updates
+    final storeState = ref.watch(globalStoreNotifierProvider);
 
-    return DashboardState(selectedDate: DateTime.now());
+    // Load initial data when stores are loaded
+    _loadInitialData(storeState);
+
+    return DashboardState(
+      selectedDate: DateTime.now(),
+      stores: storeState.stores,
+      selectedStoreId: storeState.selectedStoreId,
+    );
   }
 
-  Future<void> _loadInitialData() async {
-    state = state.copyWith(isLoading: true, error: null);
+  Future<void> _loadInitialData(StoreState storeState) async {
+    if (storeState.isLoading) {
+      state = state.copyWith(isLoading: true);
+      return;
+    }
 
-    // Load stores
-    final storesResult = await _storeRepo.getAccessibleStores();
-    storesResult.fold(
-      (failure) => state = state.copyWith(error: failure.message),
-      (stores) => state = state.copyWith(stores: stores),
+    state = state.copyWith(
+      isLoading: true,
+      error: storeState.error,
+      stores: storeState.stores,
+      selectedStoreId: storeState.selectedStoreId,
+    );
+
+    developer.log(
+      'Dashboard: Stores loaded - ${storeState.stores.length} stores, selectedId=${storeState.selectedStoreId}',
+      name: 'Dashboard',
     );
 
     // Load dashboard stats
@@ -156,14 +171,31 @@ class DashboardViewModel extends _$DashboardViewModel {
   }
 
   Future<void> _loadDashboardStats() async {
+    developer.log(
+      'Dashboard: Loading stats for storeId=${state.selectedStoreId}, date=${state.selectedDate.toIso8601String().split('T')[0]}',
+      name: 'Dashboard',
+    );
+
     final statsResult = await _dashboardRepo.getDashboardStats(
       storeId: state.selectedStoreId,
       date: state.selectedDate,
     );
 
     statsResult.fold(
-      (failure) => state = state.copyWith(error: failure.message),
-      (stats) => state = state.copyWith(stats: stats),
+      (failure) {
+        developer.log(
+          'Dashboard: Failed to load stats: ${failure.message}',
+          name: 'Dashboard',
+        );
+        state = state.copyWith(error: failure.message);
+      },
+      (stats) {
+        developer.log(
+          'Dashboard: Stats loaded - totalSales=${stats.totalSales}, totalOrders=${stats.totalOrders}, completedOrders=${stats.completedOrders}',
+          name: 'Dashboard',
+        );
+        state = state.copyWith(stats: stats);
+      },
     );
 
     // Load outlet stats
@@ -172,8 +204,26 @@ class DashboardViewModel extends _$DashboardViewModel {
     );
 
     outletResult.fold(
-      (failure) => state = state.copyWith(error: failure.message),
-      (outletStats) => state = state.copyWith(outletStats: outletStats),
+      (failure) {
+        developer.log(
+          'Dashboard: Failed to load outlet stats: ${failure.message}',
+          name: 'Dashboard',
+        );
+        state = state.copyWith(error: failure.message);
+      },
+      (outletStats) {
+        developer.log(
+          'Dashboard: Outlet stats loaded - ${outletStats.length} outlets',
+          name: 'Dashboard',
+        );
+        for (final outlet in outletStats) {
+          developer.log(
+            '  - ${outlet.storeName}: orders=${outlet.totalOrders}, sales=${outlet.totalSales}',
+            name: 'Dashboard',
+          );
+        }
+        state = state.copyWith(outletStats: outletStats);
+      },
     );
   }
 
@@ -189,6 +239,12 @@ class DashboardViewModel extends _$DashboardViewModel {
   }
 
   void setSelectedOutlet(String outletName) {
+    // Update the global store provider - this will trigger a rebuild
+    ref
+        .read(globalStoreNotifierProvider.notifier)
+        .setSelectedOutlet(outletName);
+
+    // Also update local state immediately for responsiveness
     if (outletName == 'All Outlets') {
       state = state.copyWith(selectedStoreId: null);
     } else {

@@ -16,37 +16,38 @@ class OrderPlatformModel {
     this.brandColor,
   });
 
-  static List<OrderPlatformModel> getDefaultPlatforms() {
-    return const [
-      OrderPlatformModel(
-        id: 'all',
-        name: 'All',
-        icon: Icons.grid_view_outlined,
-      ),
-      OrderPlatformModel(
-        id: 'foodpanda',
-        name: 'FoodPanda',
-        icon: Icons.delivery_dining,
-      ),
-      OrderPlatformModel(
-        id: 'home_website',
-        name: 'Home Website',
-        icon: Icons.language,
-      ),
-      OrderPlatformModel(id: 'zomato', name: 'Zomato', icon: Icons.restaurant),
-      OrderPlatformModel(id: 'swiggy', name: 'Swiggy', icon: Icons.fastfood),
-      OrderPlatformModel(
-        id: 'uber_eats',
-        name: 'Uber Eats',
-        icon: Icons.directions_car,
-      ),
-      OrderPlatformModel(
-        id: 'dunzo',
-        name: 'Dunzo',
-        icon: Icons.local_shipping,
-      ),
-    ];
-  }
+  /// Default platform options (these are UI configuration, not data)
+  static const List<OrderPlatformModel> defaultPlatforms = [
+    OrderPlatformModel(id: 'all', name: 'All', icon: Icons.grid_view_outlined),
+    OrderPlatformModel(
+      id: 'foodpanda',
+      name: 'FoodPanda',
+      icon: Icons.delivery_dining,
+    ),
+    OrderPlatformModel(id: 'zomato', name: 'Zomato', icon: Icons.restaurant),
+    OrderPlatformModel(id: 'swiggy', name: 'Swiggy', icon: Icons.fastfood),
+    OrderPlatformModel(
+      id: 'uber_eats',
+      name: 'Uber Eats',
+      icon: Icons.directions_car,
+    ),
+    OrderPlatformModel(id: 'dunzo', name: 'Dunzo', icon: Icons.local_shipping),
+    OrderPlatformModel(
+      id: 'dine_in',
+      name: 'Dine In',
+      icon: Icons.restaurant_menu,
+    ),
+    OrderPlatformModel(
+      id: 'takeaway',
+      name: 'Takeaway',
+      icon: Icons.shopping_bag,
+    ),
+    OrderPlatformModel(
+      id: 'delivery',
+      name: 'Delivery',
+      icon: Icons.delivery_dining,
+    ),
+  ];
 }
 
 /// Model for order status filter
@@ -83,13 +84,6 @@ class RestaurantModel {
   const RestaurantModel({required this.id, required this.name});
 
   String get displayName => '$id - $name';
-
-  static List<RestaurantModel> getDefaultRestaurants() {
-    return const [
-      RestaurantModel(id: '363317', name: 'Aarthi cake Magic'),
-      RestaurantModel(id: '383514', name: 'Ambattur Aarthi sweets and bakery'),
-    ];
-  }
 }
 
 /// Model for online order record

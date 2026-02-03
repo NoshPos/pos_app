@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:pos_app/core/providers/repository_providers.dart';
+import 'package:pos_app/core/providers/store_provider.dart';
 import 'package:pos_app/core/repositories/store_repository.dart';
 import '../model/report_model.dart';
 
@@ -81,36 +81,26 @@ class ReportsState {
 /// ViewModel for the Reports screen using Riverpod
 @riverpod
 class ReportsViewModel extends _$ReportsViewModel {
-  late StoreRepository _storeRepo;
-
   @override
   ReportsState build() {
-    _storeRepo = ref.watch(storeRepositoryProvider);
+    // Watch the global store state
+    final storeState = ref.watch(globalStoreNotifierProvider);
 
     final defaultReports = ReportModel.getDefaultReports();
-    _loadStores();
 
     return ReportsState(
       reports: defaultReports,
       filteredReports: defaultReports,
-    );
-  }
-
-  Future<void> _loadStores() async {
-    final storesResult = await _storeRepo.getAccessibleStores();
-    storesResult.fold(
-      (failure) => state = state.copyWith(error: failure.message),
-      (stores) => state = state.copyWith(stores: stores),
+      stores: storeState.stores,
+      selectedStoreId: storeState.selectedStoreId,
     );
   }
 
   void setSelectedOutlet(String outletName) {
-    if (outletName == 'All Outlets') {
-      state = state.copyWith(selectedStoreId: null);
-    } else {
-      final store = state.stores.where((s) => s.name == outletName).firstOrNull;
-      state = state.copyWith(selectedStoreId: store?.id);
-    }
+    // Update the global store provider
+    ref
+        .read(globalStoreNotifierProvider.notifier)
+        .setSelectedOutlet(outletName);
   }
 
   void setSearchQuery(String query) {

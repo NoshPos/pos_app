@@ -65,5 +65,47 @@ final orderRepositoryProvider = AutoDisposeProvider<OrderRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef OrderRepositoryRef = AutoDisposeProviderRef<OrderRepository>;
+String _$profileRepositoryHash() => r'b335f7574e1e390a45b7b9f704c7ee03b82c6d90';
+
+/// Profile repository provider
+///
+/// Copied from [profileRepository].
+@ProviderFor(profileRepository)
+final profileRepositoryProvider =
+    AutoDisposeProvider<ProfileRepository>.internal(
+      profileRepository,
+      name: r'profileRepositoryProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$profileRepositoryHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef ProfileRepositoryRef = AutoDisposeProviderRef<ProfileRepository>;
+String _$salesReportRepositoryHash() =>
+    r'7bd3123c5e935f8e977649f92748e6aef661fcc7';
+
+/// Sales report repository provider
+///
+/// Copied from [salesReportRepository].
+@ProviderFor(salesReportRepository)
+final salesReportRepositoryProvider =
+    AutoDisposeProvider<SalesReportRepository>.internal(
+      salesReportRepository,
+      name: r'salesReportRepositoryProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$salesReportRepositoryHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SalesReportRepositoryRef =
+    AutoDisposeProviderRef<SalesReportRepository>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

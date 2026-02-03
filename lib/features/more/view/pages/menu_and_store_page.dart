@@ -1,39 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/common_scaffold.dart';
 import '../../../dashboard/view/widgets/chat_support_button.dart';
+import '../../viewmodel/menu_and_store_viewmodel.dart';
 
 /// Menu and Store Actions page
-class MenuAndStorePage extends StatefulWidget {
+class MenuAndStorePage extends ConsumerWidget {
   const MenuAndStorePage({super.key});
 
   @override
-  State<MenuAndStorePage> createState() => _MenuAndStorePageState();
-}
-
-class _MenuAndStorePageState extends State<MenuAndStorePage> {
-  String _selectedOutlet = 'All Outlets';
-  final List<String> _availableOutlets = [
-    'All Outlets',
-    'Aarthi cake Magic',
-    'Ambattur Aarthi sweets and bakery',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final state = ref.watch(menuAndStoreViewModelProvider);
 
     return CommonScaffold(
       activeItemId: 'thirdparty_config',
-      selectedOutlet: _selectedOutlet,
-      availableOutlets: _availableOutlets,
-      onOutletSelected: (outlet) {
-        setState(() {
-          _selectedOutlet = outlet;
-        });
-      },
+      selectedOutlet: state.selectedOutlet,
+      availableOutlets: state.availableOutlets,
+      onOutletSelected: ref
+          .read(menuAndStoreViewModelProvider.notifier)
+          .setSelectedOutlet,
       onLightBulbTap: () {},
       backgroundColor: colorScheme.surface,
-      body: _buildBody(),
+      body: _MenuAndStoreBody(),
       floatingActionButton: ChatSupportButton(
         onTap: () {
           // Handle chat support tap
@@ -41,8 +30,11 @@ class _MenuAndStorePageState extends State<MenuAndStorePage> {
       ),
     );
   }
+}
 
-  Widget _buildBody() {
+class _MenuAndStoreBody extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -50,7 +42,7 @@ class _MenuAndStorePageState extends State<MenuAndStorePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header with back arrow and title
-        _buildHeader(colorScheme, textTheme),
+        _buildHeader(context, colorScheme, textTheme),
         // Main content with empty state
         Expanded(
           child: Container(
@@ -62,7 +54,11 @@ class _MenuAndStorePageState extends State<MenuAndStorePage> {
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildHeader(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(

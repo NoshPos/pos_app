@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pos_app/core/providers/repository_providers.dart';
+import 'package:pos_app/core/providers/store_provider.dart';
 import 'package:pos_app/core/repositories/order_repository.dart';
 import 'package:pos_app/core/repositories/store_repository.dart';
 import 'package:pos_app/features/dashboard/model/order_category_model.dart';
@@ -155,27 +156,24 @@ class RunningOrdersState {
 @riverpod
 class RunningOrdersViewModel extends _$RunningOrdersViewModel {
   late OrderRepository _orderRepo;
-  late StoreRepository _storeRepo;
 
   @override
   RunningOrdersState build() {
     _orderRepo = ref.watch(orderRepositoryProvider);
-    _storeRepo = ref.watch(storeRepositoryProvider);
+
+    // Watch global store provider for store list and selection
+    final storeState = ref.watch(globalStoreNotifierProvider);
 
     _loadInitialData();
 
-    return const RunningOrdersState();
+    return RunningOrdersState(
+      stores: storeState.stores,
+      selectedStoreId: storeState.selectedStoreId,
+    );
   }
 
   Future<void> _loadInitialData() async {
     state = state.copyWith(isLoading: true, error: null);
-
-    // Load stores
-    final storesResult = await _storeRepo.getAccessibleStores();
-    storesResult.fold(
-      (failure) => state = state.copyWith(error: failure.message),
-      (stores) => state = state.copyWith(stores: stores),
-    );
 
     // Load running orders
     await _loadRunningOrders();
@@ -209,12 +207,9 @@ class RunningOrdersViewModel extends _$RunningOrdersViewModel {
   Future<void> refreshOrders() => refresh();
 
   void setSelectedOutlet(String outletName) {
-    if (outletName == 'All Outlets') {
-      state = state.copyWith(selectedStoreId: null);
-    } else {
-      final store = state.stores.where((s) => s.name == outletName).firstOrNull;
-      state = state.copyWith(selectedStoreId: store?.id);
-    }
+    ref
+        .read(globalStoreNotifierProvider.notifier)
+        .setSelectedOutlet(outletName);
     _loadRunningOrders();
   }
 

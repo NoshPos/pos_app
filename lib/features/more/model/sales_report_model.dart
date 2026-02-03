@@ -143,16 +143,6 @@ class RestaurantFilter {
       isSelected: isSelected ?? this.isSelected,
     );
   }
-
-  static List<RestaurantFilter> getDefaultRestaurants() {
-    return [
-      const RestaurantFilter(id: 'aarthi_cake', name: 'Aarthi cake Magic'),
-      const RestaurantFilter(
-        id: 'ambattur_aarthi',
-        name: 'Ambattur Aarthi sweets and bakery',
-      ),
-    ];
-  }
 }
 
 /// Column visibility option

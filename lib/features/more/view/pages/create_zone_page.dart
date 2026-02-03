@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/common_scaffold.dart';
 import '../../../dashboard/view/widgets/chat_support_button.dart';
+import '../../viewmodel/zone_viewmodel.dart';
 
 /// Mock Zone Model
 class ZoneModel {
@@ -18,24 +20,26 @@ class ZoneModel {
 }
 
 /// Restaurant Zone List Page
-class CreateZonePage extends StatefulWidget {
+class CreateZonePage extends ConsumerStatefulWidget {
   const CreateZonePage({super.key});
 
   @override
-  State<CreateZonePage> createState() => _CreateZonePageState();
+  ConsumerState<CreateZonePage> createState() => _CreateZonePageState();
 }
 
-class _CreateZonePageState extends State<CreateZonePage> {
+class _CreateZonePageState extends ConsumerState<CreateZonePage> {
   final TextEditingController _searchController = TextEditingController();
   final List<ZoneModel> _zones = [];
   final Set<int> _selectedZoneIndexes = {};
 
-  String _selectedOutlet = 'All Outlets';
-  final List<String> _availableOutlets = [
-    'All Outlets',
-    'Outlet 1',
-    'Outlet 2',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Load stores from repository
+    Future.microtask(() {
+      ref.read(zoneViewModelProvider.notifier).loadStores();
+    });
+  }
 
   @override
   void dispose() {
@@ -95,19 +99,27 @@ class _CreateZonePageState extends State<CreateZonePage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final state = ref.watch(zoneViewModelProvider);
+    final viewModel = ref.read(zoneViewModelProvider.notifier);
+
+    // Build outlets list from stores
+    final availableOutlets = [
+      'All Outlets',
+      ...state.stores.map((s) => s.name),
+    ];
 
     return CommonScaffold(
       activeItemId: 'create_zone',
-      selectedOutlet: _selectedOutlet,
-      availableOutlets: _availableOutlets,
+      selectedOutlet: state.selectedOutlet,
+      availableOutlets: availableOutlets,
       onOutletSelected: (outlet) {
-        setState(() {
-          _selectedOutlet = outlet;
-        });
+        viewModel.setSelectedOutlet(outlet);
       },
       onLightBulbTap: () {},
       backgroundColor: colorScheme.surface,
-      body: _buildBody(),
+      body: state.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildBody(),
       floatingActionButton: ChatSupportButton(
         onTap: () {
           // Handle chat support tap
@@ -614,35 +626,26 @@ class _CreateZonePageState extends State<CreateZonePage> {
 }
 
 /// Add Restaurant Zone Page
-class AddZonePage extends StatefulWidget {
+class AddZonePage extends ConsumerStatefulWidget {
   const AddZonePage({super.key});
 
   @override
-  State<AddZonePage> createState() => _AddZonePageState();
+  ConsumerState<AddZonePage> createState() => _AddZonePageState();
 }
 
-class _AddZonePageState extends State<AddZonePage> {
+class _AddZonePageState extends ConsumerState<AddZonePage> {
   final TextEditingController _zoneNameController = TextEditingController();
   bool _isActive = true;
   final Set<int> _selectedRestaurants = {};
 
-  // Mock restaurant data
-  final List<Map<String, dynamic>> _restaurants = [
-    {
-      'name': 'Aarthi cake Magic',
-      'subOrderType': '',
-      'state': 'Tamil Nadu',
-      'city': 'Chennai',
-      'presentInZone': false,
-    },
-    {
-      'name': 'Ambaltur Aarthi sweets and bakery',
-      'subOrderType': '',
-      'state': 'Tamil Nadu',
-      'city': 'Chennai',
-      'presentInZone': false,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Load stores from repository
+    Future.microtask(() {
+      ref.read(zoneViewModelProvider.notifier).loadStores();
+    });
+  }
 
   @override
   void dispose() {
@@ -651,6 +654,8 @@ class _AddZonePageState extends State<AddZonePage> {
   }
 
   void _saveZone() {
+    final state = ref.read(zoneViewModelProvider);
+
     if (_zoneNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -666,7 +671,7 @@ class _AddZonePageState extends State<AddZonePage> {
     }
 
     final selectedRestaurantNames = _selectedRestaurants
-        .map((index) => _restaurants[index]['name'] as String)
+        .map((index) => state.restaurants[index]['name'] as String)
         .toList();
 
     final zone = ZoneModel(
@@ -683,33 +688,42 @@ class _AddZonePageState extends State<AddZonePage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final state = ref.watch(zoneViewModelProvider);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Column(
-        children: [
-          // Header with title and back button
-          _buildHeader(colorScheme, textTheme),
-          // Main content
-          Expanded(
-            child: Container(
-              color: colorScheme.surfaceContainerLowest,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildZoneDetails(colorScheme, textTheme),
-                    _buildRestaurantList(colorScheme, textTheme),
-                    const SizedBox(height: 80), // Space for bottom buttons
-                  ],
+      body: state.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // Header with title and back button
+                _buildHeader(colorScheme, textTheme),
+                // Main content
+                Expanded(
+                  child: Container(
+                    color: colorScheme.surfaceContainerLowest,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildZoneDetails(colorScheme, textTheme),
+                          _buildRestaurantList(
+                            colorScheme,
+                            textTheme,
+                            state.restaurants,
+                          ),
+                          const SizedBox(
+                            height: 80,
+                          ), // Space for bottom buttons
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                // Bottom action buttons
+                _buildBottomButtons(colorScheme),
+              ],
             ),
-          ),
-          // Bottom action buttons
-          _buildBottomButtons(colorScheme),
-        ],
-      ),
       floatingActionButton: ChatSupportButton(
         onTap: () {
           // Handle chat support tap
@@ -876,7 +890,11 @@ class _AddZonePageState extends State<AddZonePage> {
     );
   }
 
-  Widget _buildRestaurantList(ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildRestaurantList(
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    List<Map<String, dynamic>> restaurants,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -926,13 +944,12 @@ class _AddZonePageState extends State<AddZonePage> {
                         width: 40,
                         child: Checkbox(
                           value:
-                              _selectedRestaurants.length ==
-                              _restaurants.length,
+                              _selectedRestaurants.length == restaurants.length,
                           onChanged: (value) {
                             setState(() {
                               if (value == true) {
                                 _selectedRestaurants.addAll(
-                                  List.generate(_restaurants.length, (i) => i),
+                                  List.generate(restaurants.length, (i) => i),
                                 );
                               } else {
                                 _selectedRestaurants.clear();
@@ -995,7 +1012,7 @@ class _AddZonePageState extends State<AddZonePage> {
                   ),
                 ),
                 // Table rows
-                ..._restaurants.asMap().entries.map(
+                ...restaurants.asMap().entries.map(
                   (entry) => _buildRestaurantRow(
                     entry.key,
                     entry.value,

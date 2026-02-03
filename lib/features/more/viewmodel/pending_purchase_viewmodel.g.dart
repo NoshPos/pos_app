@@ -7,7 +7,7 @@ part of 'pending_purchase_viewmodel.dart';
 // **************************************************************************
 
 String _$pendingPurchaseViewModelHash() =>
-    r'26a84a736eb8242b9b0dca0185d5770684a4a645';
+    r'a8d75652840e49cf1e4a76621cfed2ffe9cb9f39';
 
 /// ViewModel for the Pending Purchase page using Riverpod
 ///

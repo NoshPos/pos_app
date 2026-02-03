@@ -9,7 +9,7 @@ part 'pending_purchase_viewmodel.g.dart';
 class PendingPurchaseState {
   final String? selectedStoreId;
   final List<StoreModel> stores;
-  final String selectedRestaurant;
+  final String? selectedRestaurantId;
   final DateTime startDate;
   final DateTime endDate;
   final bool isLoading;
@@ -19,7 +19,7 @@ class PendingPurchaseState {
   PendingPurchaseState({
     this.selectedStoreId,
     this.stores = const [],
-    this.selectedRestaurant = 'Aarthi cake Magic',
+    this.selectedRestaurantId,
     DateTime? startDate,
     DateTime? endDate,
     this.isLoading = false,
@@ -32,7 +32,7 @@ class PendingPurchaseState {
   PendingPurchaseState copyWith({
     String? selectedStoreId,
     List<StoreModel>? stores,
-    String? selectedRestaurant,
+    String? selectedRestaurantId,
     DateTime? startDate,
     DateTime? endDate,
     bool? isLoading,
@@ -42,7 +42,7 @@ class PendingPurchaseState {
     return PendingPurchaseState(
       selectedStoreId: selectedStoreId ?? this.selectedStoreId,
       stores: stores ?? this.stores,
-      selectedRestaurant: selectedRestaurant ?? this.selectedRestaurant,
+      selectedRestaurantId: selectedRestaurantId ?? this.selectedRestaurantId,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       isLoading: isLoading ?? this.isLoading,
@@ -68,11 +68,16 @@ class PendingPurchaseState {
   /// Alias for availableOutlets
   List<String> get outlets => availableOutlets;
 
-  List<String> get restaurants => [
-    'Aarthi cake Magic',
-    'Restaurant 1',
-    'Restaurant 2',
-  ];
+  /// Restaurants derived from stores
+  List<String> get restaurants => stores.map((s) => s.name).toList();
+
+  String get selectedRestaurant {
+    if (selectedRestaurantId == null && stores.isNotEmpty) {
+      return stores.first.name;
+    }
+    final store = stores.where((s) => s.id == selectedRestaurantId).firstOrNull;
+    return store?.name ?? (stores.isNotEmpty ? stores.first.name : '');
+  }
 
   bool get isEmpty => purchases.isEmpty;
 }
@@ -107,7 +112,8 @@ class PendingPurchaseViewModel extends _$PendingPurchaseViewModel {
   }
 
   void setSelectedRestaurant(String restaurant) {
-    state = state.copyWith(selectedRestaurant: restaurant);
+    final store = state.stores.where((s) => s.name == restaurant).firstOrNull;
+    state = state.copyWith(selectedRestaurantId: store?.id);
   }
 
   void setStartDate(DateTime date) {
@@ -135,8 +141,9 @@ class PendingPurchaseViewModel extends _$PendingPurchaseViewModel {
   }
 
   Future<void> showAll() async {
+    final firstStoreId = state.stores.isNotEmpty ? state.stores.first.id : null;
     state = state.copyWith(
-      selectedRestaurant: state.restaurants.first,
+      selectedRestaurantId: firstStoreId,
       startDate: DateTime.now().subtract(const Duration(days: 30)),
       endDate: DateTime.now(),
     );

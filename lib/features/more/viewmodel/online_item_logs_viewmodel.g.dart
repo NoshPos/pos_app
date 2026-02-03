@@ -7,7 +7,7 @@ part of 'online_item_logs_viewmodel.dart';
 // **************************************************************************
 
 String _$onlineItemLogsViewModelHash() =>
-    r'8e01c9a8ada693e5dbd6032b10a5e8a3084bd3b9';
+    r'18f91f16aa29bc5a093a25ff30ede4cf3bf8fc83';
 
 /// ViewModel for Online Item On/Off Logs page
 ///

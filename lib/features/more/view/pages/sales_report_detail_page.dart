@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/widgets/common_scaffold.dart';
+import '../../../../core/repositories/sales_report_repository.dart';
 import '../../viewmodel/sales_report_viewmodel.dart';
 import '../../model/sales_report_model.dart';
 import '../../../dashboard/view/widgets/chat_support_button.dart';
@@ -340,38 +341,43 @@ class _SalesReportDetailPageState extends ConsumerState<SalesReportDetailPage> {
           builder: (context, scrollController) {
             return StatefulBuilder(
               builder: (context, setState) {
+                final state = ref.read(salesReportViewModelProvider);
                 return Column(
                   children: [
                     // Header
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                        'Select Restaurants',
+                        'Select Store',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
                     const Divider(height: 1),
-                    // Items list with checkboxes
+                    // Items list
                     Expanded(
                       child: ListView.builder(
                         controller: scrollController,
-                        itemCount: ref
-                            .read(salesReportViewModelProvider)
-                            .restaurants
-                            .length,
+                        itemCount: state.availableOutlets.length,
                         itemBuilder: (context, index) {
-                          final restaurant = ref
-                              .read(salesReportViewModelProvider)
-                              .restaurants[index];
-                          return CheckboxListTile(
-                            title: Text(restaurant.name),
-                            value: restaurant.isSelected,
-                            onChanged: (value) {
+                          final outletName = state.availableOutlets[index];
+                          final isSelected =
+                              outletName == state.selectedOutletName;
+                          return ListTile(
+                            title: Text(outletName),
+                            trailing: isSelected
+                                ? Icon(
+                                    Icons.check,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  )
+                                : null,
+                            onTap: () {
                               ref
                                   .read(salesReportViewModelProvider.notifier)
-                                  .toggleRestaurant(restaurant.id);
-                              setState(() {});
+                                  .setSelectedOutlet(outletName);
+                              Navigator.pop(context);
                             },
                           );
                         },
@@ -586,7 +592,7 @@ class _SalesReportDetailPageState extends ConsumerState<SalesReportDetailPage> {
   }
 
   List<Widget> _buildDynamicSummaryCells(
-    SalesReportSummary summary,
+    SalesReportSummaryData summary,
     String label,
   ) {
     final cells = <Widget>[];
@@ -680,7 +686,7 @@ class _SalesReportDetailPageState extends ConsumerState<SalesReportDetailPage> {
     return cells;
   }
 
-  List<Widget> _buildDynamicDataCells(RestaurantSalesData data) {
+  List<Widget> _buildDynamicDataCells(SalesReportData data) {
     final cells = <Widget>[];
 
     final cellData = [
@@ -707,7 +713,7 @@ class _SalesReportDetailPageState extends ConsumerState<SalesReportDetailPage> {
       ('wallet', data.wallet.toStringAsFixed(0), 100.0),
       ('online', data.online.toStringAsFixed(0), 100.0),
       ('pax', data.pax.toString(), 80.0),
-      ('data_synced', data.dataSynced, 150.0),
+      ('data_synced', data.dataSynced ?? '', 150.0),
     ];
 
     for (final (id, value, width) in cellData) {
@@ -725,7 +731,7 @@ class _SalesReportDetailPageState extends ConsumerState<SalesReportDetailPage> {
 
   Widget _buildSummaryRow(
     String label,
-    SalesReportSummary summary,
+    SalesReportSummaryData summary,
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
@@ -747,7 +753,7 @@ class _SalesReportDetailPageState extends ConsumerState<SalesReportDetailPage> {
   }
 
   Widget _buildDataRow(
-    RestaurantSalesData data,
+    SalesReportData data,
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
@@ -761,7 +767,7 @@ class _SalesReportDetailPageState extends ConsumerState<SalesReportDetailPage> {
       ),
       child: Row(
         children: [
-          _buildCell(data.restaurantName, 150),
+          _buildCell(data.storeName, 150),
           ..._buildDynamicDataCells(data),
         ],
       ),

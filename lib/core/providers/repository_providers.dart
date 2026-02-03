@@ -4,6 +4,8 @@ import 'package:pos_app/core/providers/supabase_provider.dart';
 import 'package:pos_app/core/repositories/store_repository.dart';
 import 'package:pos_app/core/repositories/dashboard_repository.dart';
 import 'package:pos_app/core/repositories/order_repository.dart';
+import 'package:pos_app/core/repositories/profile_repository.dart';
+import 'package:pos_app/core/repositories/sales_report_repository.dart';
 
 part 'repository_providers.g.dart';
 
@@ -26,4 +28,18 @@ DashboardRepository dashboardRepository(Ref ref) {
 OrderRepository orderRepository(Ref ref) {
   final client = ref.watch(supabaseClientProvider);
   return OrderRepositoryImpl(client);
+}
+
+/// Profile repository provider
+@riverpod
+ProfileRepository profileRepository(Ref ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return ProfileRepositoryImpl(client);
+}
+
+/// Sales report repository provider
+@riverpod
+SalesReportRepository salesReportRepository(Ref ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return SalesReportRepositoryImpl(client);
 }

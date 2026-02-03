@@ -1,92 +1,104 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../core/repositories/store_repository.dart';
-import '../../../core/providers/repository_providers.dart';
+import 'package:pos_app/core/providers/store_provider.dart';
+import 'package:pos_app/core/repositories/store_repository.dart';
 
 part 'item_out_of_stock_viewmodel.g.dart';
 
 /// State class for Item Out-Of-Stock Tracking
 class ItemOutOfStockState {
-  final String selectedOutlet;
+  final String? selectedStoreId;
+  final List<StoreModel> stores;
   final int selectedMainTabIndex; // 0 for Items, 1 for Addons
   final int selectedViewTabIndex; // 0 for Restaurant Wise, 1 for Item Wise
-  final String selectedRestaurant;
+  final String? selectedRestaurantId;
   final String selectedCategory;
   final String itemName;
   final String selectedBrand;
   final String selectedOffDuration;
   final bool showRestaurantsWithAllItemsInStock;
-  final List<String> availableOutlets;
-  final List<String> restaurants;
-  final List<String> categories;
-  final List<String> brands;
-  final List<String> offDurationOptions;
   final bool isLoading;
   final String? error;
 
   const ItemOutOfStockState({
-    this.selectedOutlet = 'All Outlets',
+    this.selectedStoreId,
+    this.stores = const [],
     this.selectedMainTabIndex = 0,
     this.selectedViewTabIndex = 0,
-    this.selectedRestaurant = 'All',
+    this.selectedRestaurantId,
     this.selectedCategory = 'All',
     this.itemName = '',
     this.selectedBrand = 'All',
     this.selectedOffDuration = 'Select',
     this.showRestaurantsWithAllItemsInStock = false,
-    this.availableOutlets = const [
-      'All Outlets',
-      'Aarthi cake Magic',
-      'Ambattur Aarthi sweets and bakery',
-    ],
-    this.restaurants = const [
-      'All',
-      'Aarthi cake Magic',
-      'Ambattur Aarthi sweets and bakery',
-    ],
-    this.categories = const [
-      'All',
-      'Beverages',
-      'Snacks',
-      'Main Course',
-      'Desserts',
-    ],
-    this.brands = const ['All', 'Brand A', 'Brand B', 'Brand C'],
-    this.offDurationOptions = const [
-      'Select',
-      '30 minutes',
-      '1 hour',
-      '2 hours',
-      '4 hours',
-      '8 hours',
-      '24 hours',
-    ],
     this.isLoading = false,
     this.error,
   });
 
+  List<String> get availableOutlets => [
+    'All Outlets',
+    ...stores.map((s) => s.name),
+  ];
+
+  String get selectedOutletName {
+    if (selectedStoreId == null) return 'All Outlets';
+    final store = stores.where((s) => s.id == selectedStoreId).firstOrNull;
+    return store?.name ?? 'All Outlets';
+  }
+
+  String get selectedOutlet => selectedOutletName;
+
+  /// Restaurants derived from stores
+  List<String> get restaurants => ['All', ...stores.map((s) => s.name)];
+
+  String get selectedRestaurant {
+    if (selectedRestaurantId == null) return 'All';
+    final store = stores.where((s) => s.id == selectedRestaurantId).firstOrNull;
+    return store?.name ?? 'All';
+  }
+
+  /// Categories - will be fetched from real data in future
+  List<String> get categories => const [
+    'All',
+    'Beverages',
+    'Snacks',
+    'Main Course',
+    'Desserts',
+  ];
+
+  /// Brands - will be fetched from real data in future
+  List<String> get brands => const ['All'];
+
+  /// Off duration options
+  List<String> get offDurationOptions => const [
+    'Select',
+    '30 minutes',
+    '1 hour',
+    '2 hours',
+    '4 hours',
+    '8 hours',
+    '24 hours',
+  ];
+
   ItemOutOfStockState copyWith({
-    String? selectedOutlet,
+    String? selectedStoreId,
+    List<StoreModel>? stores,
     int? selectedMainTabIndex,
     int? selectedViewTabIndex,
-    String? selectedRestaurant,
+    String? selectedRestaurantId,
     String? selectedCategory,
     String? itemName,
     String? selectedBrand,
     String? selectedOffDuration,
     bool? showRestaurantsWithAllItemsInStock,
-    List<String>? availableOutlets,
-    List<String>? restaurants,
-    List<String>? categories,
-    List<String>? brands,
-    List<String>? offDurationOptions,
     bool? isLoading,
     String? error,
   }) {
     return ItemOutOfStockState(
-      selectedOutlet: selectedOutlet ?? this.selectedOutlet,
+      selectedStoreId: selectedStoreId ?? this.selectedStoreId,
+      stores: stores ?? this.stores,
       selectedMainTabIndex: selectedMainTabIndex ?? this.selectedMainTabIndex,
       selectedViewTabIndex: selectedViewTabIndex ?? this.selectedViewTabIndex,
-      selectedRestaurant: selectedRestaurant ?? this.selectedRestaurant,
+      selectedRestaurantId: selectedRestaurantId ?? this.selectedRestaurantId,
       selectedCategory: selectedCategory ?? this.selectedCategory,
       itemName: itemName ?? this.itemName,
       selectedBrand: selectedBrand ?? this.selectedBrand,
@@ -94,11 +106,6 @@ class ItemOutOfStockState {
       showRestaurantsWithAllItemsInStock:
           showRestaurantsWithAllItemsInStock ??
           this.showRestaurantsWithAllItemsInStock,
-      availableOutlets: availableOutlets ?? this.availableOutlets,
-      restaurants: restaurants ?? this.restaurants,
-      categories: categories ?? this.categories,
-      brands: brands ?? this.brands,
-      offDurationOptions: offDurationOptions ?? this.offDurationOptions,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -108,16 +115,21 @@ class ItemOutOfStockState {
 /// ViewModel for the Item Out-Of-Stock Tracking screen
 @riverpod
 class ItemOutOfStockViewModel extends _$ItemOutOfStockViewModel {
-  late final StoreRepository _storeRepo;
-
   @override
   ItemOutOfStockState build() {
-    _storeRepo = ref.watch(storeRepositoryProvider);
-    return const ItemOutOfStockState();
+    // Watch global store provider for store list and selection
+    final storeState = ref.watch(globalStoreNotifierProvider);
+
+    return ItemOutOfStockState(
+      stores: storeState.stores,
+      selectedStoreId: storeState.selectedStoreId,
+    );
   }
 
-  void setSelectedOutlet(String outlet) {
-    state = state.copyWith(selectedOutlet: outlet);
+  void setSelectedOutlet(String outletName) {
+    ref
+        .read(globalStoreNotifierProvider.notifier)
+        .setSelectedOutlet(outletName);
   }
 
   void setSelectedMainTabIndex(int index) {
@@ -129,7 +141,12 @@ class ItemOutOfStockViewModel extends _$ItemOutOfStockViewModel {
   }
 
   void setSelectedRestaurant(String restaurant) {
-    state = state.copyWith(selectedRestaurant: restaurant);
+    if (restaurant == 'All') {
+      state = state.copyWith(selectedRestaurantId: null);
+    } else {
+      final store = state.stores.where((s) => s.name == restaurant).firstOrNull;
+      state = state.copyWith(selectedRestaurantId: store?.id);
+    }
   }
 
   void setSelectedCategory(String category) {
@@ -157,7 +174,7 @@ class ItemOutOfStockViewModel extends _$ItemOutOfStockViewModel {
 
   void resetFilters() {
     state = state.copyWith(
-      selectedRestaurant: 'All',
+      selectedRestaurantId: null,
       selectedCategory: 'All',
       itemName: '',
       selectedBrand: 'All',
@@ -178,7 +195,8 @@ class ItemOutOfStockViewModel extends _$ItemOutOfStockViewModel {
 
   Future<void> refresh() async {
     state = state.copyWith(isLoading: true, error: null);
-    // TODO: Implement refresh API call via repository
+    // Refresh stores from global provider
+    await ref.read(globalStoreNotifierProvider.notifier).refreshStores();
     state = state.copyWith(isLoading: false);
   }
 

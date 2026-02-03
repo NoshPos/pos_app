@@ -19,6 +19,19 @@ class _UserInfoPageState extends ConsumerState<UserInfoPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final state = ref.watch(userInfoViewModelProvider);
 
+    // Listen for errors to show snackbar
+    ref.listen(userInfoViewModelProvider, (prev, next) {
+      if (next.error != null && prev?.error != next.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: colorScheme.error,
+          ),
+        );
+        ref.read(userInfoViewModelProvider.notifier).clearError();
+      }
+    });
+
     return CommonScaffold(
       activeItemId: 'user_info',
       selectedOutlet: state.selectedOutlet,
@@ -135,6 +148,10 @@ class _UserInfoPageState extends ConsumerState<UserInfoPage> {
     final state = ref.watch(userInfoViewModelProvider);
     final userInfo = state.userInfo;
 
+    if (userInfo == null) {
+      return const Center(child: Text('Loading user info...'));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -206,7 +223,7 @@ class _UserInfoPageState extends ConsumerState<UserInfoPage> {
           Transform.scale(
             scale: 0.9,
             child: Switch(
-              value: userInfo.is2FAEnabled,
+              value: userInfo?.is2FAEnabled ?? false,
               onChanged: (value) =>
                   ref.read(userInfoViewModelProvider.notifier).toggle2FA(value),
               activeTrackColor: colorScheme.primary,
@@ -315,6 +332,13 @@ class _UserInfoPageState extends ConsumerState<UserInfoPage> {
   void _showEditDialog() {
     final state = ref.read(userInfoViewModelProvider);
     final userInfo = state.userInfo;
+
+    if (userInfo == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User info not loaded yet')));
+      return;
+    }
 
     showEditUserInfoDialog(
       context: context,

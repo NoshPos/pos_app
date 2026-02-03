@@ -1,50 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/common_scaffold.dart';
+import '../../viewmodel/store_status_tracking_viewmodel.dart';
 
 /// Store Status Tracking Dashboard page
-class StoreStatusTrackingPage extends StatefulWidget {
+class StoreStatusTrackingPage extends ConsumerWidget {
   const StoreStatusTrackingPage({super.key});
 
   @override
-  State<StoreStatusTrackingPage> createState() =>
-      _StoreStatusTrackingPageState();
-}
-
-class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
-  String _selectedOutlet = 'All Outlets';
-  final List<String> _availableOutlets = [
-    'All Outlets',
-    'Aarthi cake Magic',
-    'Ambattur Aarthi sweets and bakery',
-  ];
-
-  // Filter state
-  String _selectedRestaurant = 'All';
-  String _selectedAggregator = 'Select';
-  String _selectedBrand = 'All';
-  String _selectedOfflineDuration = 'Select';
-  int _selectedTabIndex = 0; // 0 for Restaurant Wise, 1 for Aggregator
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final state = ref.watch(storeStatusTrackingViewModelProvider);
 
     return CommonScaffold(
       activeItemId: 'store_status',
-      selectedOutlet: _selectedOutlet,
-      availableOutlets: _availableOutlets,
-      onOutletSelected: (outlet) {
-        setState(() {
-          _selectedOutlet = outlet;
-        });
-      },
+      selectedOutlet: state.selectedOutlet,
+      availableOutlets: state.availableOutlets,
+      onOutletSelected: ref
+          .read(storeStatusTrackingViewModelProvider.notifier)
+          .setSelectedOutlet,
       onLightBulbTap: () {},
       backgroundColor: colorScheme.surface,
-      body: _buildBody(),
+      body: _StoreStatusTrackingBody(),
     );
   }
+}
 
-  Widget _buildBody() {
+class _StoreStatusTrackingBody extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_StoreStatusTrackingBody> createState() =>
+      _StoreStatusTrackingBodyState();
+}
+
+class _StoreStatusTrackingBodyState
+    extends ConsumerState<_StoreStatusTrackingBody> {
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -192,6 +183,9 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
   }
 
   Widget _buildFiltersSection(ColorScheme colorScheme, TextTheme textTheme) {
+    final state = ref.watch(storeStatusTrackingViewModelProvider);
+    final notifier = ref.read(storeStatusTrackingViewModelProvider.notifier);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -200,7 +194,7 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
           // Choose restaurant
           _buildFilterDropdown(
             label: 'Choose restaurant',
-            value: _selectedRestaurant,
+            value: state.selectedRestaurant,
             colorScheme: colorScheme,
             textTheme: textTheme,
             onTap: () {
@@ -211,7 +205,7 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
           // Aggregator
           _buildFilterDropdown(
             label: 'Aggregator',
-            value: _selectedAggregator,
+            value: state.selectedAggregator,
             colorScheme: colorScheme,
             textTheme: textTheme,
             onTap: () {
@@ -222,7 +216,7 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
           // Brand Name
           _buildFilterDropdown(
             label: 'Brand Name',
-            value: _selectedBrand,
+            value: state.selectedBrand,
             colorScheme: colorScheme,
             textTheme: textTheme,
             onTap: () {
@@ -233,7 +227,7 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
           // Store(s) Off for more than
           _buildFilterDropdown(
             label: 'Store(s) Off for more than',
-            value: _selectedOfflineDuration,
+            value: state.selectedOfflineDuration,
             colorScheme: colorScheme,
             textTheme: textTheme,
             onTap: () {
@@ -270,13 +264,11 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    // Handle reset
-                    setState(() {
-                      _selectedRestaurant = 'All';
-                      _selectedAggregator = 'Select';
-                      _selectedBrand = 'All';
-                      _selectedOfflineDuration = 'Select';
-                    });
+                    // Handle reset via viewmodel
+                    notifier.setSelectedRestaurant('All');
+                    notifier.setSelectedAggregator('Select');
+                    notifier.setSelectedBrand('All');
+                    notifier.setSelectedOfflineDuration('Select');
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: colorScheme.onSurface,
@@ -380,6 +372,10 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
   }
 
   Widget _buildTabSection(ColorScheme colorScheme, TextTheme textTheme) {
+    final state = ref.watch(storeStatusTrackingViewModelProvider);
+    final notifier = ref.read(storeStatusTrackingViewModelProvider.notifier);
+    final selectedTabIndex = state.selectedTabIndex;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -387,19 +383,17 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
           Expanded(
             child: GestureDetector(
               onTap: () {
-                setState(() {
-                  _selectedTabIndex = 0;
-                });
+                notifier.setSelectedTabIndex(0);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: _selectedTabIndex == 0
+                  color: selectedTabIndex == 0
                       ? colorScheme.primaryContainer
                       : Colors.transparent,
                   border: Border(
                     bottom: BorderSide(
-                      color: _selectedTabIndex == 0
+                      color: selectedTabIndex == 0
                           ? colorScheme.primary
                           : colorScheme.outline.withValues(alpha: 0.2),
                       width: 2,
@@ -410,10 +404,10 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
                   'Restaurant Wise',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
-                    color: _selectedTabIndex == 0
+                    color: selectedTabIndex == 0
                         ? colorScheme.onPrimaryContainer
                         : colorScheme.onSurfaceVariant,
-                    fontWeight: _selectedTabIndex == 0
+                    fontWeight: selectedTabIndex == 0
                         ? FontWeight.w600
                         : FontWeight.normal,
                   ),
@@ -424,19 +418,17 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
           Expanded(
             child: GestureDetector(
               onTap: () {
-                setState(() {
-                  _selectedTabIndex = 1;
-                });
+                notifier.setSelectedTabIndex(1);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: _selectedTabIndex == 1
+                  color: selectedTabIndex == 1
                       ? colorScheme.primaryContainer
                       : Colors.transparent,
                   border: Border(
                     bottom: BorderSide(
-                      color: _selectedTabIndex == 1
+                      color: selectedTabIndex == 1
                           ? colorScheme.primary
                           : colorScheme.outline.withValues(alpha: 0.2),
                       width: 2,
@@ -447,10 +439,10 @@ class _StoreStatusTrackingPageState extends State<StoreStatusTrackingPage> {
                   'Aggregator',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
-                    color: _selectedTabIndex == 1
+                    color: selectedTabIndex == 1
                         ? colorScheme.onPrimaryContainer
                         : colorScheme.onSurfaceVariant,
-                    fontWeight: _selectedTabIndex == 1
+                    fontWeight: selectedTabIndex == 1
                         ? FontWeight.w600
                         : FontWeight.normal,
                   ),

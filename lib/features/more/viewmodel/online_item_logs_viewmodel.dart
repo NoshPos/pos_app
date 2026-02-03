@@ -1,44 +1,58 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../core/repositories/store_repository.dart';
-import '../../../core/providers/repository_providers.dart';
+import 'package:pos_app/core/providers/store_provider.dart';
+import 'package:pos_app/core/repositories/store_repository.dart';
 
 part 'online_item_logs_viewmodel.g.dart';
 
 /// State class for Online Item Logs
 class OnlineItemLogsState {
-  final String selectedOutlet;
-  final List<String> availableOutlets;
+  final String? selectedStoreId;
+  final List<StoreModel> stores;
   final bool isSearchExpanded;
-  final List<String> restaurants;
   final Set<String> selectedRestaurants;
   final DateTime? fromDate;
   final DateTime? toDate;
-  final String selectedOutletFilter;
-  final List<String> outlets;
   final String searchItemIdName;
+  final String selectedOutletFilter;
   final List<Map<String, dynamic>> logs;
   final bool isLoading;
   final String? error;
 
   const OnlineItemLogsState({
-    this.selectedOutlet = 'All Outlets',
-    this.availableOutlets = const ['All Outlets', 'Outlet 1', 'Outlet 2'],
+    this.selectedStoreId,
+    this.stores = const [],
     this.isSearchExpanded = true,
-    this.restaurants = const [
-      'Please Select',
-      '363317 - Aarthi cake Magic',
-      '383514 - Ambattur Aarthi sweets and bakery',
-    ],
     this.selectedRestaurants = const {},
     this.fromDate,
     this.toDate,
-    this.selectedOutletFilter = 'Select Outlet',
-    this.outlets = const ['Select Outlet', 'Outlet 1', 'Outlet 2', 'Outlet 3'],
     this.searchItemIdName = '',
+    this.selectedOutletFilter = 'Select Outlet',
     this.logs = const [],
     this.isLoading = false,
     this.error,
   });
+
+  List<String> get availableOutlets => [
+    'All Outlets',
+    ...stores.map((s) => s.name),
+  ];
+
+  String get selectedOutletName {
+    if (selectedStoreId == null) return 'All Outlets';
+    final store = stores.where((s) => s.id == selectedStoreId).firstOrNull;
+    return store?.name ?? 'All Outlets';
+  }
+
+  String get selectedOutlet => selectedOutletName;
+
+  /// Outlets list for filter dropdown
+  List<String> get outlets => ['Select Outlet', ...stores.map((s) => s.name)];
+
+  /// Restaurants derived from stores with ID prefix
+  List<String> get restaurants => [
+    'Please Select',
+    ...stores.map((s) => '${s.id} - ${s.name}'),
+  ];
 
   bool get isAllRestaurantsSelected => selectedRestaurants.isEmpty;
 
@@ -49,31 +63,27 @@ class OnlineItemLogsState {
   }
 
   OnlineItemLogsState copyWith({
-    String? selectedOutlet,
-    List<String>? availableOutlets,
+    String? selectedStoreId,
+    List<StoreModel>? stores,
     bool? isSearchExpanded,
-    List<String>? restaurants,
     Set<String>? selectedRestaurants,
     DateTime? fromDate,
     DateTime? toDate,
-    String? selectedOutletFilter,
-    List<String>? outlets,
     String? searchItemIdName,
+    String? selectedOutletFilter,
     List<Map<String, dynamic>>? logs,
     bool? isLoading,
     String? error,
   }) {
     return OnlineItemLogsState(
-      selectedOutlet: selectedOutlet ?? this.selectedOutlet,
-      availableOutlets: availableOutlets ?? this.availableOutlets,
+      selectedStoreId: selectedStoreId ?? this.selectedStoreId,
+      stores: stores ?? this.stores,
       isSearchExpanded: isSearchExpanded ?? this.isSearchExpanded,
-      restaurants: restaurants ?? this.restaurants,
       selectedRestaurants: selectedRestaurants ?? this.selectedRestaurants,
       fromDate: fromDate ?? this.fromDate,
       toDate: toDate ?? this.toDate,
-      selectedOutletFilter: selectedOutletFilter ?? this.selectedOutletFilter,
-      outlets: outlets ?? this.outlets,
       searchItemIdName: searchItemIdName ?? this.searchItemIdName,
+      selectedOutletFilter: selectedOutletFilter ?? this.selectedOutletFilter,
       logs: logs ?? this.logs,
       isLoading: isLoading ?? this.isLoading,
       error: error,
@@ -84,17 +94,24 @@ class OnlineItemLogsState {
 /// ViewModel for Online Item On/Off Logs page
 @riverpod
 class OnlineItemLogsViewModel extends _$OnlineItemLogsViewModel {
-  late final StoreRepository _storeRepo;
-
   @override
   OnlineItemLogsState build() {
-    _storeRepo = ref.watch(storeRepositoryProvider);
+    // Watch global store provider for store list and selection
+    final storeState = ref.watch(globalStoreNotifierProvider);
+
     final now = DateTime.now();
-    return OnlineItemLogsState(fromDate: now, toDate: now);
+    return OnlineItemLogsState(
+      fromDate: now,
+      toDate: now,
+      stores: storeState.stores,
+      selectedStoreId: storeState.selectedStoreId,
+    );
   }
 
-  void setSelectedOutlet(String outlet) {
-    state = state.copyWith(selectedOutlet: outlet);
+  void setSelectedOutlet(String outletName) {
+    ref
+        .read(globalStoreNotifierProvider.notifier)
+        .setSelectedOutlet(outletName);
   }
 
   void toggleSearchExpanded() {
