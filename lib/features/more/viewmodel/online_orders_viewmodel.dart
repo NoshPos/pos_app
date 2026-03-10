@@ -138,19 +138,83 @@ class OnlineOrdersViewModel extends _$OnlineOrdersViewModel {
   }
 
   Future<void> _loadOnlineOrders() async {
-    // Skip loading if no store selected yet
     final storeId = state.selectedStoreId;
     if (storeId == null) {
       state = state.copyWith(orders: []);
       return;
     }
 
-    final result = await _orderRepo.getOnlineOrders(storeId: storeId);
+    // Use platform-specific channel filter if selected
+    final channelFilter = state.selectedPlatformId == 'all'
+        ? null
+        : state.selectedPlatformId;
 
-    result.fold(
-      (failure) => state = state.copyWith(error: failure.message),
-      (orders) => state = state.copyWith(orders: orders),
+    final result = await _orderRepo.getOnlineOrders(
+      storeId: storeId,
+      channel: channelFilter,
     );
+
+    result.fold((failure) => state = state.copyWith(error: failure.message), (
+      orders,
+    ) {
+      // Apply local filters: status, order number, date range
+      var filtered = orders;
+
+      // Filter by status
+      if (state.selectedStatus != OrderStatus.all) {
+        filtered = filtered.where((o) {
+          return _matchesUiStatus(o, state.selectedStatus);
+        }).toList();
+      }
+
+      // Filter by order number
+      if (state.orderNoFilter.isNotEmpty) {
+        final query = state.orderNoFilter.toLowerCase();
+        filtered = filtered
+            .where((o) => (o.orderNumber ?? '').toLowerCase().contains(query))
+            .toList();
+      }
+
+      // Filter by date range
+      filtered = filtered.where((o) {
+        final orderDate = DateTime(
+          o.createdAt.year,
+          o.createdAt.month,
+          o.createdAt.day,
+        );
+        final start = DateTime(
+          state.startDate.year,
+          state.startDate.month,
+          state.startDate.day,
+        );
+        final end = DateTime(
+          state.endDate.year,
+          state.endDate.month,
+          state.endDate.day,
+        );
+        return !orderDate.isBefore(start) && !orderDate.isAfter(end);
+      }).toList();
+
+      state = state.copyWith(orders: filtered);
+    });
+  }
+
+  /// Maps repository order status to UI order status for filtering
+  bool _matchesUiStatus(OrderModel order, OrderStatus uiStatus) {
+    switch (uiStatus) {
+      case OrderStatus.waitingForAcceptance:
+        return order.status.value == 'pending';
+      case OrderStatus.accepted:
+        return order.status.value == 'confirmed';
+      case OrderStatus.preparingFoodKotCreated:
+        return order.status.value == 'preparing';
+      case OrderStatus.foodIsReady:
+        return order.status.value == 'ready';
+      case OrderStatus.delivered:
+        return order.status.value == 'completed';
+      default:
+        return true;
+    }
   }
 
   void setSelectedOutlet(String outletName) {
