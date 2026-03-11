@@ -7,7 +7,7 @@ part of 'online_orders_viewmodel.dart';
 // **************************************************************************
 
 String _$onlineOrdersViewModelHash() =>
-    r'28f31cfcbaa05baf894ea1de80531758578cf61c';
+    r'73a96653137dae92a6de6a8bbc0df5fc8c337de6';
 
 /// ViewModel for the Online Orders Activity screen using Riverpod
 ///

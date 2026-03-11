@@ -186,7 +186,6 @@ class OrdersChartSection extends StatelessWidget {
       _LegendItem('Home Website', colorScheme.primary),
       _LegendItem('Zomato', colorScheme.error),
       _LegendItem('Swiggy', colorScheme.secondary),
-      _LegendItem('Dunzo_old', colorScheme.tertiary),
       _LegendItem('Uber Eats', colorScheme.error),
       _LegendItem('Call Center', colorScheme.primary),
       _LegendItem('Uengage', colorScheme.errorContainer),

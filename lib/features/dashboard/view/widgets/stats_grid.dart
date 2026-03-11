@@ -170,14 +170,13 @@ class StatsGridNew extends StatelessWidget {
   }
 
   Widget _buildCashCollectedCard(ColorScheme colorScheme) {
-    final cashSales = stats.totalSales - stats.onlineSales;
     return StatCard(
       icon: Icons.account_balance_wallet_outlined,
       iconBackgroundColor: colorScheme.tertiary,
       title: 'Cash Collected',
-      amount: _formatCurrency(cashSales),
+      amount: _formatCurrency(stats.cashSales),
       infoText:
-          '${_calcPercent(cashSales, stats.totalSales)} of total sales (excluding online orders)',
+          '${_calcPercent(stats.cashSales, stats.totalSales)} of total sales (excluding online orders)',
     );
   }
 
@@ -203,12 +202,11 @@ class StatsGridNew extends StatelessWidget {
   }
 
   Widget _buildTaxesCard(ColorScheme colorScheme) {
-    final taxes = stats.totalSales - stats.netSales;
     return StatCard(
       icon: Icons.receipt_outlined,
       iconBackgroundColor: colorScheme.outline,
       title: 'Taxes',
-      amount: _formatCurrency(taxes),
+      amount: _formatCurrency(stats.taxCollected),
       infoText: 'Taxes recorded',
     );
   }
@@ -218,8 +216,9 @@ class StatsGridNew extends StatelessWidget {
       icon: Icons.local_offer_outlined,
       iconBackgroundColor: colorScheme.error,
       title: 'Discounts',
-      amount: '0.00',
-      infoText: '0% Discounts given',
+      amount: _formatCurrency(stats.totalDiscounts),
+      infoText:
+          '${_calcPercent(stats.totalDiscounts, stats.totalSales)} Discounts given',
     );
   }
 }

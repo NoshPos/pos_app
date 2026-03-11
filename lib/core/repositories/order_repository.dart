@@ -103,6 +103,16 @@ extension OrderPlatformExtension on OrderPlatform {
       orElse: () => OrderPlatform.dineIn,
     );
   }
+
+  /// Online delivery platforms (aggregator apps)
+  static const onlinePlatforms = {
+    'foodpanda', 'zomato', 'swiggy', 'uber_eats',
+  };
+
+  /// Check if a channel value represents an online platform
+  static bool isOnlinePlatform(String channel) {
+    return onlinePlatforms.contains(channel.toLowerCase());
+  }
 }
 
 /// Order model — maps to backend OrderResponse
@@ -254,6 +264,7 @@ abstract class OrderRepository {
   Future<Either<Failure, List<OrderModel>>> getOrders({
     required String storeId,
     OrderStatus? status,
+    String? paymentStatus,
     String? orderType,
     String? channel,
     int limit,
@@ -266,6 +277,7 @@ abstract class OrderRepository {
 
   Future<Either<Failure, List<OrderModel>>> getOnlineOrders({
     required String storeId,
+    String? channel,
   });
 
   Future<Either<Failure, OrderModel>> getOrderById(String id);
@@ -283,6 +295,39 @@ abstract class OrderRepository {
     required String orderId,
     required String reason,
   });
+
+  Future<Either<Failure, OrderModel>> transferOrder({
+    required String orderId,
+    required Map<String, dynamic> transferData,
+  });
+
+  Future<Either<Failure, OrderItemModel>> addOrderItem({
+    required String orderId,
+    required Map<String, dynamic> itemData,
+  });
+
+  Future<Either<Failure, OrderItemModel>> updateOrderItem({
+    required String orderId,
+    required String itemId,
+    required Map<String, dynamic> itemData,
+  });
+
+  Future<Either<Failure, OrderItemModel>> deleteOrderItem({
+    required String orderId,
+    required String itemId,
+  });
+
+  Future<Either<Failure, Map<String, dynamic>>> createKot({
+    required String orderId,
+  });
+
+  Future<Either<Failure, Map<String, dynamic>>> createPayment({
+    required Map<String, dynamic> paymentData,
+  });
+
+  Future<Either<Failure, Map<String, dynamic>>> createRefund({
+    required Map<String, dynamic> refundData,
+  });
 }
 
 /// REST API implementation of OrderRepository
@@ -295,6 +340,7 @@ class OrderRepositoryImpl implements OrderRepository {
   Future<Either<Failure, List<OrderModel>>> getOrders({
     required String storeId,
     OrderStatus? status,
+    String? paymentStatus,
     String? orderType,
     String? channel,
     int limit = 50,
@@ -308,6 +354,9 @@ class OrderRepositoryImpl implements OrderRepository {
       };
       if (status != null && status != OrderStatus.all) {
         queryParams['status'] = status.value;
+      }
+      if (paymentStatus != null) {
+        queryParams['payment_status'] = paymentStatus;
       }
       if (orderType != null) {
         queryParams['order_type'] = orderType;
@@ -331,16 +380,34 @@ class OrderRepositoryImpl implements OrderRepository {
   @override
   Future<Either<Failure, List<OrderModel>>> getRunningOrders({
     required String storeId,
-  }) {
-    // Running orders = pending + preparing + ready statuses
-    return getOrders(storeId: storeId, status: OrderStatus.pending, limit: 200);
+  }) async {
+    // Get all orders and filter locally for active statuses
+    final result = await getOrders(storeId: storeId, limit: 200);
+    return result.map(
+      (orders) => orders
+          .where((o) =>
+              o.status != OrderStatus.completed &&
+              o.status != OrderStatus.cancelled)
+          .toList(),
+    );
   }
 
   @override
   Future<Either<Failure, List<OrderModel>>> getOnlineOrders({
     required String storeId,
-  }) {
-    return getOrders(storeId: storeId, channel: 'online', limit: 200);
+    String? channel,
+  }) async {
+    // If a specific platform channel is provided, use API filter
+    if (channel != null && channel != 'all') {
+      return getOrders(storeId: storeId, channel: channel, limit: 200);
+    }
+    // Otherwise get all orders and filter for online platforms locally
+    final result = await getOrders(storeId: storeId, limit: 200);
+    return result.map(
+      (orders) => orders
+          .where((o) => OrderPlatformExtension.isOnlinePlatform(o.channel))
+          .toList(),
+    );
   }
 
   @override
@@ -405,6 +472,121 @@ class OrderRepositoryImpl implements OrderRepository {
       return left(apiFailure(e));
     } catch (e) {
       return left(Failure(message: 'Failed to cancel order: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, OrderModel>> transferOrder({
+    required String orderId,
+    required Map<String, dynamic> transferData,
+  }) async {
+    try {
+      final result = await _client.put(
+        '/orders/$orderId/transfer',
+        data: transferData,
+      );
+      return right(OrderModel.fromJson(result as Map<String, dynamic>));
+    } on ApiException catch (e) {
+      return left(apiFailure(e));
+    } catch (e) {
+      return left(Failure(message: 'Failed to transfer order: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, OrderItemModel>> addOrderItem({
+    required String orderId,
+    required Map<String, dynamic> itemData,
+  }) async {
+    try {
+      final result = await _client.post(
+        '/orders/$orderId/items',
+        data: itemData,
+      );
+      return right(OrderItemModel.fromJson(result as Map<String, dynamic>));
+    } on ApiException catch (e) {
+      return left(apiFailure(e));
+    } catch (e) {
+      return left(Failure(message: 'Failed to add order item: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, OrderItemModel>> updateOrderItem({
+    required String orderId,
+    required String itemId,
+    required Map<String, dynamic> itemData,
+  }) async {
+    try {
+      final result = await _client.put(
+        '/orders/$orderId/items/$itemId',
+        data: itemData,
+      );
+      return right(OrderItemModel.fromJson(result as Map<String, dynamic>));
+    } on ApiException catch (e) {
+      return left(apiFailure(e));
+    } catch (e) {
+      return left(Failure(message: 'Failed to update order item: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, OrderItemModel>> deleteOrderItem({
+    required String orderId,
+    required String itemId,
+  }) async {
+    try {
+      final result = await _client.delete('/orders/$orderId/items/$itemId');
+      return right(OrderItemModel.fromJson(result as Map<String, dynamic>));
+    } on ApiException catch (e) {
+      return left(apiFailure(e));
+    } catch (e) {
+      return left(Failure(message: 'Failed to delete order item: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> createKot({
+    required String orderId,
+  }) async {
+    try {
+      final result = await _client.post('/orders/$orderId/kot');
+      return right(result as Map<String, dynamic>);
+    } on ApiException catch (e) {
+      return left(apiFailure(e));
+    } catch (e) {
+      return left(Failure(message: 'Failed to create KOT: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> createPayment({
+    required Map<String, dynamic> paymentData,
+  }) async {
+    try {
+      final result = await _client.post('/orders/payments', data: paymentData);
+      return right(result as Map<String, dynamic>);
+    } on ApiException catch (e) {
+      return left(apiFailure(e));
+    } catch (e) {
+      return left(Failure(message: 'Failed to create payment: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> createRefund({
+    required Map<String, dynamic> refundData,
+  }) async {
+    try {
+      final result = await _client.post(
+        '/orders/payments/refund',
+        data: refundData,
+      );
+      return right(result as Map<String, dynamic>);
+    } on ApiException catch (e) {
+      return left(apiFailure(e));
+    } catch (e) {
+      return left(Failure(message: 'Failed to create refund: $e'));
     }
   }
 }
